@@ -1,0 +1,349 @@
+// Property data model — Design System & UX Specification, sections 8, 11, 12, 14.
+// Location hierarchy and units are generic by design: nothing here hardcodes
+// India, INR, sq ft, or a single-city assumption. Depth beyond City is optional.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Location hierarchy ----------
+// Country -> State/Province -> City -> Locality -> Neighbourhood (optional)
+
+model Country {
+  id     String          @id @default(cuid())
+  name   String
+  code   String          @unique // ISO 3166-1 alpha-2, e.g. "IN"
+  states StateProvince[]
+
+  @@map("countries")
+}
+
+model StateProvince {
+  id        String  @id @default(cuid())
+  name      String
+  code      String?
+  country   Country @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  countryId String
+  cities    City[]
+
+  @@unique([countryId, name])
+  @@map("states_provinces")
+}
+
+model City {
+  id             String         @id @default(cuid())
+  name           String
+  slug           String         @unique
+  imageUrl       String? // for the homepage/explore "Explore locations" card
+  state          StateProvince  @relation(fields: [stateId], references: [id], onDelete: Restrict)
+  stateId        String
+  localities     Locality[]
+  properties     Property[]
+  leads          Lead[]
+  featuredCities FeaturedCity[]
+
+  @@map("cities")
+}
+
+model Locality {
+  id             String          @id @default(cuid())
+  name           String
+  slug           String
+  imageUrl       String? // for the homepage/explore "Explore locations" card
+  city           City            @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  cityId         String
+  neighbourhoods Neighbourhood[]
+  properties     Property[]
+  leads          Lead[]
+
+  @@unique([cityId, slug])
+  @@map("localities")
+}
+
+model Neighbourhood {
+  id         String     @id @default(cuid())
+  name       String
+  slug       String
+  locality   Locality   @relation(fields: [localityId], references: [id], onDelete: Restrict)
+  localityId String
+  properties Property[]
+
+  @@unique([localityId, slug])
+  @@map("neighbourhoods")
+}
+
+// ---------- Taxonomies ----------
+
+model Category {
+  id         String     @id @default(cuid())
+  name       String
+  slug       String     @unique
+  imageUrl   String? // for the homepage/explore "Explore categories" card
+  properties Property[]
+
+  @@map("categories")
+}
+
+model Amenity {
+  id         String            @id @default(cuid())
+  name       String
+  slug       String            @unique
+  icon       String? // key into the icon set, not a decorative image
+  properties PropertyAmenity[]
+
+  @@map("amenities")
+}
+
+// ---------- Property ----------
+
+enum ListingType {
+  SALE
+  RENT
+}
+
+enum RentPeriod {
+  MONTHLY
+  YEARLY
+}
+
+enum AreaUnit {
+  SQFT
+  SQM
+  ACRE
+  HECTARE
+  MARLA
+  KANAL
+}
+
+enum Facing {
+  NORTH
+  SOUTH
+  EAST
+  WEST
+  NORTH_EAST
+  NORTH_WEST
+  SOUTH_EAST
+  SOUTH_WEST
+}
+
+enum Furnishing {
+  UNFURNISHED
+  SEMI_FURNISHED
+  FULLY_FURNISHED
+}
+
+enum ConstructionStatus {
+  UNDER_CONSTRUCTION
+  READY_TO_MOVE
+}
+
+// Draft -> Published (Featured is a boolean overlay on Published, not its own
+// lifecycle state) -> Under Offer -> Unavailable -> Sold -> Rented -> Archived
+enum PropertyStatus {
+  DRAFT
+  PUBLISHED
+  UNDER_OFFER
+  UNAVAILABLE
+  SOLD
+  RENTED
+  ARCHIVED
+}
+
+model Property {
+  id    String @id @default(cuid())
+  slug  String @unique
+  title String // e.g. "3 BHK Apartment" — type + context, not a marketing name
+
+  listingType ListingType
+  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  categoryId  String
+
+  // Location
+  city            City           @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  cityId          String
+  locality        Locality       @relation(fields: [localityId], references: [id], onDelete: Restrict)
+  localityId      String
+  neighbourhood   Neighbourhood? @relation(fields: [neighbourhoodId], references: [id], onDelete: SetNull)
+  neighbourhoodId String?
+  latitude        Float?
+  longitude       Float?
+
+  // Pricing — generic currency, never hardcoded
+  priceAmount   Decimal     @db.Decimal(14, 2)
+  priceCurrency String // ISO 4217, e.g. "INR"
+  rentPeriod    RentPeriod? // set only when listingType = RENT
+
+  // Specifications
+  areaValue          Decimal             @db.Decimal(10, 2)
+  areaUnit           AreaUnit
+  bedrooms           Int?
+  bathrooms          Int?
+  floor              Int?
+  totalFloors        Int?
+  facing             Facing?
+  furnishing         Furnishing?
+  propertyAgeYears   Int?
+  constructionStatus ConstructionStatus?
+  possessionDate     DateTime?
+  parkingSpaces      Int?
+
+  description String @db.Text
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+
+  status   PropertyStatus @default(DRAFT)
+  featured Boolean        @default(false)
+
+  images          PropertyImage[]
+  amenities       PropertyAmenity[]
+  leads           Lead[]
+  featuredEntries FeaturedProperty[]
+  auditLogs       AuditLogEntry[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+
+  @@index([status])
+  @@index([cityId, status])
+  @@index([localityId, status])
+  // Matches searchProperties' actual where/orderBy shapes: category filter,
+  // price-range filter + price sort, and the featured-properties query.
+  @@index([status, categoryId])
+  @@index([status, priceAmount])
+  @@index([status, featured])
+  @@index([status, publishedAt])
+  @@map("properties")
+}
+
+model PropertyImage {
+  id         String   @id @default(cuid())
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  propertyId String
+  url        String
+  altText    String
+  roomLabel  String? // e.g. "Living room", "Kitchen" — for room-labeled gallery nav
+  position   Int
+  isCover    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([propertyId, position])
+  @@map("property_images")
+}
+
+model PropertyAmenity {
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  propertyId String
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  amenityId  String
+
+  @@id([propertyId, amenityId])
+  // The composite PK only helps propertyId-first lookups; the amenities
+  // filter queries the reverse direction ("properties that have amenity X").
+  @@index([amenityId])
+  @@map("property_amenities")
+}
+
+// Reorderable list powering "This week's picks" / homepage curation,
+// separate from the `featured` flag so ordering can be managed independently.
+model FeaturedProperty {
+  id         String   @id @default(cuid())
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  propertyId String   @unique
+  position   Int
+  createdAt  DateTime @default(now())
+
+  @@map("featured_properties")
+}
+
+model FeaturedCity {
+  id       String @id @default(cuid())
+  city     City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  cityId   String @unique
+  position Int
+
+  @@map("featured_cities")
+}
+
+// ---------- Leads ----------
+
+enum LeadActionType {
+  WHATSAPP
+  CALL
+  FORM
+}
+
+model Lead {
+  id         String    @id @default(cuid())
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  propertyId String?
+  city       City?     @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  cityId     String?
+  locality   Locality? @relation(fields: [localityId], references: [id], onDelete: SetNull)
+  localityId String?
+
+  name    String?
+  phone   String? // E.164
+  email   String?
+  message String? @db.Text
+
+  source     String // e.g. "detail_sticky_bar", "homepage_contact_section"
+  actionType LeadActionType
+  status     LeadStatus     @default(NEW)
+
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+
+  createdAt DateTime @default(now())
+
+  @@index([propertyId])
+  @@index([createdAt])
+  @@index([status])
+  @@map("leads")
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  CLOSED
+}
+
+// ---------- Admin ----------
+
+enum AdminRole {
+  ADMIN
+  EDITOR
+}
+
+model AdminUser {
+  id        String          @id // matches the Supabase Auth user id
+  email     String          @unique
+  name      String
+  role      AdminRole       @default(EDITOR)
+  createdAt DateTime        @default(now())
+  auditLogs AuditLogEntry[]
+
+  @@map("admin_users")
+}
+
+model AuditLogEntry {
+  id          String    @id @default(cuid())
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Restrict)
+  adminUserId String
+  property    Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  propertyId  String?
+  action      String // e.g. "status_changed", "published", "updated"
+  detail      Json?
+  createdAt   DateTime  @default(now())
+
+  @@index([propertyId])
+  @@map("audit_log_entries")
+}

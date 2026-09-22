@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — Design System & UX Specification (Design Tokens & Components tab).
+ * Do not add one-off colors, spacing, radius or shadow values outside this file.
+ */
+
+:root {
+  /* Color — one warm canvas, one accent, semantic states only */
+  --color-canvas: #faf8f4;
+  --color-canvas-alt: #f3f0ea;
+  --color-surface: #ffffff;
+  --color-ink: #1c1b19;
+  --color-ink-secondary: #6b655c;
+  --color-ink-tertiary: #a39c90;
+  --color-border: #e7e2d9;
+  --color-border-strong: #d4ccbe;
+
+  --color-accent: #3f6b52;
+  --color-accent-hover: #345a44;
+  --color-accent-subtle: #e9efe9;
+
+  --color-success: #2e7d4f;
+  --color-warning: #b8842e;
+  --color-error: #b3452f;
+  --color-unavailable: #8c8577;
+
+  /*
+   * Spacing — 8px base grid (spec tokens space-1..space-8).
+   * These map 1:1 onto Tailwind's default numeric spacing scale (also 4px-based),
+   * so components use the standard p, gap and m utilities. Reference table:
+   *   space-1  4px   -> *-1     space-5  40px  -> *-10
+   *   space-2  8px   -> *-2     space-6  64px  -> *-16
+   *   space-3  16px  -> *-4     space-7  96px  -> *-24
+   *   space-4  24px  -> *-6     space-8  120px -> *-30 (custom step, added below)
+   * No component may use a spacing value outside this list.
+   */
+
+  /* Shadow — default none; only these two exist */
+  --shadow-token-sm: 0 1px 2px rgba(28, 27, 25, 0.06);
+  --shadow-token-md: 0 4px 16px rgba(28, 27, 25, 0.08);
+}
+
+@theme inline {
+  --color-canvas: var(--color-canvas);
+  --color-canvas-alt: var(--color-canvas-alt);
+  --color-surface: var(--color-surface);
+  --color-ink: var(--color-ink);
+  --color-ink-secondary: var(--color-ink-secondary);
+  --color-ink-tertiary: var(--color-ink-tertiary);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-subtle: var(--color-accent-subtle);
+
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+  --color-unavailable: var(--color-unavailable);
+
+  /* One radius language — four steps, no in-between values */
+  --radius-xs: 2px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  /* Shadow — default none; guard rail collapses any larger default step to shadow-md */
+  --shadow-sm: var(--shadow-token-sm);
+  --shadow-md: var(--shadow-token-md);
+  --shadow-lg: var(--shadow-token-md);
+  --shadow-xl: var(--shadow-token-md);
+  --shadow-2xl: var(--shadow-token-md);
+
+  /* Spacing — extra step for space-8 (120px); 1–7 already match Tailwind's default scale */
+  --spacing-30: 7.5rem;
+
+  /* Typography */
+  --font-sans: var(--font-inter), -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  /* Reserved for future dark mode — not launched at v1. Canvas/ink invert,
+     accent shifts lighter; still exactly one accent. Left undefined until built. */
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Headings default to the display face at Light/Regular weight only — never bold. */
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 350;
+  letter-spacing: -0.01em;
+}
