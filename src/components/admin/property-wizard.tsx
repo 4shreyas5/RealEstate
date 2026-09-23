@@ -47,6 +47,7 @@ export function PropertyWizard({
   const [values, setValues] = useState<Partial<PropertyFormValues>>(initialValues);
   const [isPending, startTransition] = useTransition();
   const [publishErrors, setPublishErrors] = useState<string[]>([]);
+  const [draftErrors, setDraftErrors] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
 
   function set<K extends keyof PropertyFormValues>(key: K, value: PropertyFormValues[K]) {
@@ -55,12 +56,29 @@ export function PropertyWizard({
   }
 
   function saveAndGo(nextStep: number) {
+    // A brand-new property can't be persisted yet without category/city/
+    // locality (required relations) — Basic Info (step 0) only collects
+    // category, and city/locality live on the very next step. Rather than
+    // surface a "fill Location first" error on every first save, just
+    // advance locally until enough is known to actually create the row;
+    // nothing is lost since `values` stays in React state.
+    if (!propertyId && !(values.categoryId && values.cityId && values.localityId)) {
+      setDraftErrors([]);
+      setStep(nextStep);
+      return;
+    }
+
     startTransition(async () => {
       const withSlug = {
         ...values,
         slug: values.slug || (values.title ? slugify(values.title) : undefined),
       };
       const result = await savePropertyDraft(propertyId, withSlug);
+      if (!result.ok) {
+        setDraftErrors(result.errors);
+        return;
+      }
+      setDraftErrors([]);
       setPropertyId(result.id);
       setSaved(true);
       setStep(nextStep);
@@ -511,6 +529,14 @@ export function PropertyWizard({
               Publish
             </button>
           </section>
+        )}
+
+        {draftErrors.length > 0 && (
+          <ul className="mt-6 rounded-sm border border-error/30 bg-error/5 p-3 text-sm text-error">
+            {draftErrors.map((error) => (
+              <li key={error}>{error}</li>
+            ))}
+          </ul>
         )}
 
         <div className="mt-8 flex items-center gap-3">

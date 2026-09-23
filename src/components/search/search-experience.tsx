@@ -12,11 +12,16 @@ export function SearchExperience({
   count,
   hasMore,
   taxonomy,
+  lockedType,
+  emptyMessage = "No properties match these filters. Try widening your price range or clearing a filter.",
 }: {
   properties: MapProperty[];
   count: number;
   hasMore: boolean;
   taxonomy: FilterTaxonomy;
+  /** Set on the dedicated /buy and /rent routes — the transaction type is the page's identity, not a removable filter. */
+  lockedType?: "SALE" | "RENT";
+  emptyMessage?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -41,16 +46,22 @@ export function SearchExperience({
     setMoreAvailable(hasMore);
   }
 
+  /** Re-applies the locked transaction type after any param mutation — it must survive every navigation/fetch on /buy and /rent. */
+  function withLockedType(params: URLSearchParams) {
+    if (lockedType) params.set("type", lockedType);
+    return params;
+  }
+
   function updateParam(key: string, value: string | null) {
     const params = new URLSearchParams(searchParams.toString());
     if (value) params.set(key, value);
     else params.delete(key);
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    router.push(`${pathname}?${withLockedType(params).toString()}`, { scroll: false });
   }
 
   async function loadMore() {
     setLoadingMore(true);
-    const params = new URLSearchParams(searchParams.toString());
+    const params = withLockedType(new URLSearchParams(searchParams.toString()));
     params.set("offset", String(items.length));
     try {
       const res = await fetch(`/api/search?${params.toString()}`);
@@ -66,8 +77,10 @@ export function SearchExperience({
 
   const appliedChips = useMemo(() => {
     const chips: { key: string; label: string }[] = [];
+    // On /buy and /rent, the transaction type is the page itself, not a
+    // removable filter chip — only surface it as a chip on generic /search.
     const type = searchParams.get("type");
-    if (type) chips.push({ key: "type", label: type === "SALE" ? "Buy" : "Rent" });
+    if (!lockedType && type) chips.push({ key: "type", label: type === "SALE" ? "Buy" : "Rent" });
     const category = searchParams.get("category");
     if (category) {
       const found = taxonomy.categories.find((c) => c.id === category);
@@ -84,7 +97,7 @@ export function SearchExperience({
       });
     }
     return chips;
-  }, [searchParams, taxonomy.categories]);
+  }, [searchParams, taxonomy.categories, lockedType]);
 
   function clearChip(key: string) {
     if (key === "price") {
@@ -96,7 +109,9 @@ export function SearchExperience({
   }
 
   function clearAll() {
-    router.push(pathname, { scroll: false });
+    const params = withLockedType(new URLSearchParams());
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }
 
   const sort = searchParams.get("sort") ?? "newest";
@@ -167,9 +182,7 @@ export function SearchExperience({
             mobileView === "map" ? "hidden lg:block" : ""
           }`}
         >
-          {items.length === 0 && (
-            <PropertyGridEmptyState message="No properties match these filters. Try widening your price range or clearing a filter." />
-          )}
+          {items.length === 0 && <PropertyGridEmptyState message={emptyMessage} />}
           <ul className="space-y-8">
             {items.map((property, index) => (
               <li
@@ -213,8 +226,9 @@ export function SearchExperience({
         onClose={() => setSheetOpen(false)}
         taxonomy={taxonomy}
         searchParams={searchParams}
+        lockedType={lockedType}
         onApply={(params) => {
-          router.push(`${pathname}?${params.toString()}`, { scroll: false });
+          router.push(`${pathname}?${withLockedType(params).toString()}`, { scroll: false });
           setSheetOpen(false);
         }}
       />

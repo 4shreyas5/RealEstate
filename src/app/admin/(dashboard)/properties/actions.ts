@@ -4,15 +4,24 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdminUser } from "@/lib/admin-auth";
-import type { PropertyFormValues } from "@/lib/validations/property";
+import { propertyDraftSchema, type PropertyFormValues } from "@/lib/validations/property";
 import type { PropertyStatus } from "@prisma/client";
 
 /** Creates the property on first save, updates it on every step after — always as a Draft. */
 export async function savePropertyDraft(
   propertyId: string | null,
-  values: Partial<PropertyFormValues>,
+  rawValues: Partial<PropertyFormValues>,
 ) {
   const adminUser = await requireAdminUser();
+
+  const parsed = propertyDraftSchema.safeParse(rawValues);
+  if (!parsed.success) {
+    return {
+      ok: false as const,
+      errors: parsed.error.issues.map((issue) => issue.message),
+    };
+  }
+  const values = parsed.data;
 
   const data = {
     ...(values.title !== undefined && { title: values.title }),
@@ -67,6 +76,17 @@ export async function savePropertyDraft(
   let id = propertyId;
 
   if (!id) {
+    // `category`/`city`/`locality` are required, non-nullable relations on
+    // Property — a first save can't create a row without them, regardless
+    // of which wizard step collected them last. Catch that here with a
+    // clear message instead of letting Prisma throw a raw validation error.
+    if (!values.categoryId || !values.cityId || !values.localityId) {
+      return {
+        ok: false as const,
+        errors: ["Select a category, city, and locality before saving this draft for the first time."],
+      };
+    }
+
     // A brand-new draft needs the minimum fields a relation requires up front.
     const created = await prisma.property.create({
       data: {
@@ -106,7 +126,7 @@ export async function savePropertyDraft(
   });
 
   revalidatePath("/admin/properties");
-  return { id };
+  return { ok: true as const, id };
 }
 
 const MIN_IMAGES_TO_PUBLISH = 5;

@@ -57,6 +57,24 @@ export const propertyFormSchema = z.object({
 
 export type PropertyFormValues = z.infer<typeof propertyFormSchema>;
 
+/**
+ * Server-side validation for `savePropertyDraft` — every field optional (a
+ * draft is allowed to be incomplete), but any field that IS present must
+ * still satisfy the same type/enum constraints as the publish-time schema.
+ *
+ * `priceAmount`/`areaValue`/`description` are relaxed from the publish-time
+ * schema (`.positive()`, `.min(1)`) because a brand-new draft is persisted
+ * with `0`/`""` as explicit not-yet-entered placeholders (see
+ * `savePropertyDraft`'s create fallback) — without this, resuming that
+ * draft before touching those fields would fail validation on the app's
+ * own placeholder values.
+ */
+export const propertyDraftSchema = propertyFormSchema.partial().extend({
+  priceAmount: z.coerce.number().min(0, "Price can't be negative").optional(),
+  areaValue: z.coerce.number().min(0, "Area can't be negative").optional(),
+  description: z.string().optional(),
+});
+
 export const propertyStepFields = {
   basic: ["title", "listingType", "categoryId"],
   location: ["cityId", "localityId", "neighbourhoodId", "latitude", "longitude"],

@@ -11,7 +11,8 @@ export interface SearchOption {
 /**
  * Establishes the discovery model (location, buy/rent, category, price,
  * bedrooms) without faking results here — submitting takes the visitor to
- * /search, which is where the real, filterable result set lives.
+ * the dedicated /buy or /rent journey, which is where the real, filterable
+ * result set lives, scoped to that transaction type.
  */
 export function DiscoverySearch({
   cities,
@@ -30,10 +31,11 @@ export function DiscoverySearch({
     e.preventDefault();
     const params = new URLSearchParams();
     if (cityId) params.set("city", cityId);
-    params.set("type", listingType);
     if (categoryId) params.set("category", categoryId);
     if (bedrooms) params.set("bedrooms", bedrooms);
-    router.push(`/search?${params.toString()}`);
+    const destination = listingType === "SALE" ? "/buy" : "/rent";
+    const query = params.toString();
+    router.push(query ? `${destination}?${query}` : destination);
   }
 
   return (

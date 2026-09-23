@@ -17,12 +17,15 @@ export function FilterSheet({
   onClose,
   taxonomy,
   searchParams,
+  lockedType,
   onApply,
 }: {
   open: boolean;
   onClose: () => void;
   taxonomy: FilterTaxonomy;
   searchParams: URLSearchParams;
+  /** Set on the dedicated /buy and /rent routes — kept out of the draft's editable fields and re-applied on every count check. */
+  lockedType?: "SALE" | "RENT";
   onApply: (params: URLSearchParams) => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -43,12 +46,14 @@ export function FilterSheet({
   useEffect(() => {
     if (!open) return;
     const controller = new AbortController();
-    fetch(`/api/search-count?${draft.toString()}`, { signal: controller.signal })
+    const params = new URLSearchParams(draft.toString());
+    if (lockedType) params.set("type", lockedType);
+    fetch(`/api/search-count?${params.toString()}`, { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => setLiveCount(data.count))
       .catch(() => {});
     return () => controller.abort();
-  }, [draft, open]);
+  }, [draft, open, lockedType]);
 
   function set(key: string, value: string) {
     setDraft((prev) => {

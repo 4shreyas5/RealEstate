@@ -41,6 +41,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     { url: SITE_URL, changeFrequency: "daily" },
+    { url: `${SITE_URL}/buy`, changeFrequency: "hourly" },
+    { url: `${SITE_URL}/rent`, changeFrequency: "hourly" },
     { url: `${SITE_URL}/search`, changeFrequency: "hourly" },
     ...cityRoutes,
     ...localityRoutes,

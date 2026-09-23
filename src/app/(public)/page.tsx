@@ -23,8 +23,8 @@ export default async function HomePage() {
 
   return (
     <div>
-      {/* Discovery hero */}
-      <section className="relative flex min-h-[560px] items-end overflow-hidden bg-ink text-canvas">
+      {/* Discovery hero — brand, slogan, Buy/Rent choice, then search */}
+      <section className="relative flex min-h-[480px] items-end overflow-hidden bg-ink text-canvas sm:min-h-[600px]">
         {primaryCity && (
           <Image
             src={`https://picsum.photos/seed/${primaryCity.slug}-hero/1920/1080`}
@@ -36,13 +36,35 @@ export default async function HomePage() {
           />
         )}
         <div className="relative mx-auto w-full max-w-(--breakpoint-xl) px-4 pb-16 sm:px-6 lg:px-10">
-          <h1 className="font-display max-w-xl text-5xl font-light sm:text-6xl">
-            Considered homes in {primaryCity?.name ?? "your city"}.
+          <h1 className="font-display max-w-xl text-4xl font-light sm:text-6xl">
+            Your perfect home is our goal.
           </h1>
           <p className="mt-4 max-w-md text-canvas/80">
-            Every property here has been seen, shortlisted, and photographed by
-            our own team — not listed by anyone else.
+            Considered homes in {primaryCity?.name ?? "your city"} — seen,
+            shortlisted, and photographed by our own team.
           </p>
+
+          <div className="mt-8 grid max-w-md grid-cols-2 gap-4">
+            <Link
+              href="/buy"
+              className="rounded-md border border-canvas/40 bg-ink/40 p-5 transition-colors hover:bg-ink/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-canvas"
+            >
+              <span className="font-display block text-2xl font-medium text-canvas">Buy</span>
+              <span className="mt-1 block text-sm text-canvas/75">
+                Find a property to purchase
+              </span>
+            </Link>
+            <Link
+              href="/rent"
+              className="rounded-md border border-canvas/40 bg-ink/40 p-5 transition-colors hover:bg-ink/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-canvas"
+            >
+              <span className="font-display block text-2xl font-medium text-canvas">Rent</span>
+              <span className="mt-1 block text-sm text-canvas/75">
+                Find a property to rent
+              </span>
+            </Link>
+          </div>
+
           <div className="mt-8">
             <DiscoverySearch cities={cities} categories={categories} />
           </div>

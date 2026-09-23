@@ -57,6 +57,10 @@ export function PropertyCard({
             {statusLabel}
           </span>
         )}
+
+        <span className="absolute right-3 top-3 rounded-xs bg-surface/95 px-2 py-1 text-xs font-medium text-ink-secondary">
+          {property.listingType === "SALE" ? "For Sale" : "For Rent"}
+        </span>
       </div>
 
       <div className="mt-3 space-y-0.5">
