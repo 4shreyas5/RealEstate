@@ -6,21 +6,30 @@ import { EditorialImageCard } from "@/components/shared/editorial-image-card";
 import { ContactActionsRow } from "@/components/shared/contact-actions";
 import { PropertyGrid } from "@/components/property/property-grid";
 import { getFeaturedProperties, getRecentProperties } from "@/lib/properties";
-import { getAllCategories, getAllCities, getExploreCategories, getExploreLocations } from "@/lib/taxonomy";
+import {
+  getAllCategories,
+  getAllCities,
+  getCitiesWithListings,
+  getExploreCategories,
+  getExploreLocations,
+  getPrimaryCity,
+} from "@/lib/taxonomy";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [featured, cities, categories, exploreLocations, exploreCategories] = await Promise.all([
+  const [featured, listedCities, categories, exploreLocations, exploreCategories] = await Promise.all([
     getFeaturedProperties(6),
-    getAllCities(),
+    getCitiesWithListings(),
     getAllCategories(),
     getExploreLocations(4),
     getExploreCategories(4),
   ]);
 
   const recent = await getRecentProperties(6, featured.map((p) => p.id));
-  const primaryCity = cities[0];
+  const primaryCity = await getPrimaryCity(listedCities);
+  // Search offers the cities that actually have listings; if none do yet, every city.
+  const searchCities = listedCities.length > 0 ? listedCities : await getAllCities();
 
   return (
     <div>
@@ -69,7 +78,11 @@ export default async function HomePage() {
           </div>
 
           <div className="mt-8">
-            <DiscoverySearch cities={cities} categories={categories} />
+            <DiscoverySearch
+              cities={searchCities}
+              categories={categories}
+              defaultCityId={primaryCity?.id}
+            />
           </div>
         </div>
       </section>

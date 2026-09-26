@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { DreamITLogo } from "@/components/brand/dreamit-logo";
 
-const cityLinks = [{ href: "/lucknow", label: "Lucknow" }];
+export function SiteFooter({ cities }: { cities: { id: string; name: string; slug: string }[] }) {
+  const cityLinks = cities.slice(0, 8).map((c) => ({ href: `/${c.slug}`, label: c.name }));
 
-export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-border bg-canvas-alt">
       <div className="mx-auto grid max-w-(--breakpoint-xl) gap-10 px-4 py-16 text-sm sm:px-6 sm:grid-cols-3 lg:px-10">
@@ -19,6 +19,13 @@ export function SiteFooter() {
         <div>
           <p className="font-medium text-ink">Cities</p>
           <ul className="mt-3 space-y-2">
+            {cityLinks.length === 0 && (
+              <li>
+                <Link href="/locations" className="text-ink-secondary hover:text-ink">
+                  All locations
+                </Link>
+              </li>
+            )}
             {cityLinks.map((city) => (
               <li key={city.href}>
                 <Link href={city.href} className="text-ink-secondary hover:text-ink">

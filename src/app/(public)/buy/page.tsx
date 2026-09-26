@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { searchProperties } from "@/lib/properties";
-import { getAllCategories } from "@/lib/taxonomy";
+import { getAllCategories, getCitiesWithListings } from "@/lib/taxonomy";
 import { prisma } from "@/lib/prisma";
 import { parseSearchParams, type SearchParams } from "@/lib/validations/search";
 import { SearchExperience } from "@/components/search/search-experience";
@@ -23,10 +23,11 @@ export default async function BuyPage({
   // always SALE regardless of what a hand-edited `type` query param says.
   const filters = { ...parseSearchParams(params), listingType: "SALE" as const };
 
-  const [{ properties, count, hasMore }, categories, amenities] = await Promise.all([
+  const [{ properties, count, hasMore }, categories, amenities, cities] = await Promise.all([
     searchProperties(filters),
     getAllCategories(),
     prisma.amenity.findMany({ orderBy: { name: "asc" } }),
+    getCitiesWithListings(),
   ]);
 
   return (
@@ -43,6 +44,7 @@ export default async function BuyPage({
         hasMore={hasMore}
         taxonomy={{
           categories,
+          cities: cities.map((c) => ({ id: c.id, name: c.name })),
           amenities: amenities.map((a) => ({ id: a.id, name: a.name })),
         }}
         lockedType="SALE"

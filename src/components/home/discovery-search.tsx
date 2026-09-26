@@ -17,12 +17,14 @@ export interface SearchOption {
 export function DiscoverySearch({
   cities,
   categories,
+  defaultCityId,
 }: {
   cities: SearchOption[];
   categories: SearchOption[];
+  defaultCityId?: string;
 }) {
   const router = useRouter();
-  const [cityId, setCityId] = useState(cities[0]?.id ?? "");
+  const [cityId, setCityId] = useState(cities.some((c) => c.id === defaultCityId) ? defaultCityId! : (cities[0]?.id ?? ""));
   const [listingType, setListingType] = useState<"SALE" | "RENT">("SALE");
   const [categoryId, setCategoryId] = useState("");
   const [bedrooms, setBedrooms] = useState("");

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { isSupabaseStorageUrl } from "@/lib/storage";
 import { useState, useTransition } from "react";
 import type { PropertyStatus } from "@prisma/client";
 import { cn } from "@/lib/utils";
@@ -158,6 +159,8 @@ export function PropertiesTable({ rows }: { rows: PropertyRow[] }) {
                         alt=""
                         fill
                         sizes="56px"
+                        // Placeholder (non-Storage) covers can't use the optimizer in production.
+                        unoptimized={!isSupabaseStorageUrl(row.coverImageUrl)}
                         className="object-cover"
                       />
                     )}
@@ -174,7 +177,7 @@ export function PropertiesTable({ rows }: { rows: PropertyRow[] }) {
                 {row.localityName}, {row.cityName}
               </td>
               <td className="px-2 py-2 tabular-nums text-ink">
-                {row.priceCurrency} {Number(row.priceAmount).toLocaleString()}
+                {row.priceCurrency} {Number(row.priceAmount).toLocaleString("en-IN")}
               </td>
               <td className="px-2 py-2">
                 <select
@@ -199,7 +202,7 @@ export function PropertiesTable({ rows }: { rows: PropertyRow[] }) {
                 </select>
               </td>
               <td className="px-2 py-2 text-ink-secondary">
-                {new Date(row.updatedAt).toLocaleDateString()}
+                {new Date(row.updatedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
               </td>
               <td className="px-2 py-2">
                 <div className="flex items-center justify-end gap-3 text-xs">

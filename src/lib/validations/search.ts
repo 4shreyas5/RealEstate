@@ -1,6 +1,9 @@
 export interface SearchParams {
+  country?: string;
+  state?: string;
   city?: string;
   locality?: string;
+  neighbourhood?: string;
   type?: string;
   category?: string;
   minPrice?: string;
@@ -18,6 +21,11 @@ const FURNISHING_VALUES = new Set(["UNFURNISHED", "SEMI_FURNISHED", "FULLY_FURNI
 const CONSTRUCTION_VALUES = new Set(["UNDER_CONSTRUCTION", "READY_TO_MOVE"]);
 const SORT_VALUES = new Set(["newest", "price_asc", "price_desc"]);
 
+/** Location ids come straight from the URL — bounded and charset-limited so they can only ever be ids. */
+function id(value: string | undefined) {
+  return value && /^[A-Za-z0-9_-]{1,64}$/.test(value) ? value : undefined;
+}
+
 function toPositiveNumber(value: string | undefined) {
   if (!value) return undefined;
   const n = Number(value);
@@ -32,8 +40,11 @@ function toPositiveNumber(value: string | undefined) {
  */
 export function parseSearchParams(params: SearchParams) {
   return {
-    cityId: params.city || undefined,
-    localityId: params.locality || undefined,
+    countryId: id(params.country),
+    stateId: id(params.state),
+    cityId: id(params.city),
+    localityId: id(params.locality),
+    neighbourhoodId: id(params.neighbourhood),
     listingType: params.type && LISTING_TYPES.has(params.type) ? (params.type as "SALE" | "RENT") : undefined,
     categoryId: params.category || undefined,
     minPrice: toPositiveNumber(params.minPrice),

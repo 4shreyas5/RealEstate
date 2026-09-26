@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { LinkButton } from "@/components/ui/button";
 import { DreamITLogo } from "@/components/brand/dreamit-logo";
+import { CityMenu, type NavCity } from "./city-menu";
 
 const primaryLinks = [
   { href: "/buy", label: "Buy" },
@@ -21,7 +22,7 @@ const primaryLinks = [
  * Buy/Rent are the two primary discovery journeys, so they lead the nav and
  * get an explicit active-state indicator — not a generic filter link.
  */
-export function SiteHeader() {
+export function SiteHeader({ cities }: { cities: NavCity[] }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -47,13 +48,7 @@ export function SiteHeader() {
           <DreamITLogo />
         </Link>
 
-        <button
-          type="button"
-          className="ml-auto hidden items-center gap-1 rounded-sm px-3 py-2 text-sm font-medium text-ink hover:bg-canvas-alt lg:ml-0 lg:flex"
-        >
-          Lucknow
-          <ChevronIcon />
-        </button>
+        <CityMenu cities={cities} />
 
         <nav className="ml-auto hidden items-center gap-6 lg:flex" aria-label="Primary">
           {primaryLinks.map((link) => {
@@ -129,20 +124,6 @@ function MenuIcon({ open }: { open: boolean }) {
           strokeLinecap="round"
         />
       )}
-    </svg>
-  );
-}
-
-function ChevronIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-      <path
-        d="M3.5 5.25L7 8.75l3.5-3.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
     </svg>
   );
 }

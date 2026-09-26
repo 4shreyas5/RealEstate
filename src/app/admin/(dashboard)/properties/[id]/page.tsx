@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getWizardTaxonomy } from "@/lib/property-taxonomy";
+import { getWizardLocationChain, getWizardTaxonomy } from "@/lib/property-taxonomy";
 import { PropertyWizard } from "@/components/admin/property-wizard";
 import type { PropertyFormValues } from "@/lib/validations/property";
 
@@ -20,6 +20,8 @@ export default async function EditPropertyPage({
   ]);
 
   if (!property) notFound();
+
+  const initialLocation = await getWizardLocationChain(property.cityId, property.localityId);
 
   const initialValues: Partial<PropertyFormValues> = {
     title: property.title,
@@ -61,6 +63,7 @@ export default async function EditPropertyPage({
           initialValues={initialValues}
           images={property.images}
           taxonomy={taxonomy}
+          initialLocation={initialLocation}
         />
       </div>
     </div>

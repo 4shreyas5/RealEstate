@@ -59,6 +59,15 @@ export function SearchExperience({
     router.push(`${pathname}?${withLockedType(params).toString()}`, { scroll: false });
   }
 
+  function updateParams(changes: Record<string, string | null>) {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(changes)) {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    }
+    router.push(`${pathname}?${withLockedType(params).toString()}`, { scroll: false });
+  }
+
   async function loadMore() {
     setLoadingMore(true);
     const params = withLockedType(new URLSearchParams(searchParams.toString()));
@@ -81,6 +90,12 @@ export function SearchExperience({
     // removable filter chip — only surface it as a chip on generic /search.
     const type = searchParams.get("type");
     if (!lockedType && type) chips.push({ key: "type", label: type === "SALE" ? "Buy" : "Rent" });
+    const city = searchParams.get("city");
+    if (city) {
+      const found = taxonomy.cities.find((c) => c.id === city);
+      chips.push({ key: "city", label: found?.name ?? "City" });
+    }
+    if (searchParams.get("locality")) chips.push({ key: "locality", label: "Locality" });
     const category = searchParams.get("category");
     if (category) {
       const found = taxonomy.categories.find((c) => c.id === category);
@@ -97,12 +112,15 @@ export function SearchExperience({
       });
     }
     return chips;
-  }, [searchParams, taxonomy.categories, lockedType]);
+  }, [searchParams, taxonomy.categories, taxonomy.cities, lockedType]);
 
   function clearChip(key: string) {
+    if (key === "city") {
+      updateParams({ city: null, locality: null, neighbourhood: null });
+      return;
+    }
     if (key === "price") {
-      updateParam("minPrice", null);
-      updateParam("maxPrice", null);
+      updateParams({ minPrice: null, maxPrice: null });
       return;
     }
     updateParam(key, null);

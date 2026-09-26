@@ -122,8 +122,11 @@ export const getPropertyBySlug = cache(async (slug: string) => {
 export const DEFAULT_SEARCH_PAGE_SIZE = 24;
 
 export interface PropertySearchFilters {
+  countryId?: string;
+  stateId?: string;
   cityId?: string;
   localityId?: string;
+  neighbourhoodId?: string;
   listingType?: ListingType;
   categoryId?: string;
   minPrice?: number;
@@ -140,8 +143,14 @@ export interface PropertySearchFilters {
 export async function searchProperties(filters: PropertySearchFilters) {
   const where: Prisma.PropertyWhereInput = {
     status: "PUBLISHED",
+    // Country / state are reached through the city's relations, so a property
+    // is searchable at every level of the hierarchy without denormalising.
+    ...(filters.countryId && { city: { state: { countryId: filters.countryId } } }),
+    ...(filters.stateId && !filters.countryId && { city: { stateId: filters.stateId } }),
+    ...(filters.stateId && filters.countryId && { city: { stateId: filters.stateId, state: { countryId: filters.countryId } } }),
     ...(filters.cityId && { cityId: filters.cityId }),
     ...(filters.localityId && { localityId: filters.localityId }),
+    ...(filters.neighbourhoodId && { neighbourhoodId: filters.neighbourhoodId }),
     ...(filters.listingType && { listingType: filters.listingType }),
     ...(filters.categoryId && { categoryId: filters.categoryId }),
     ...(filters.bedrooms !== undefined && { bedrooms: { gte: filters.bedrooms } }),

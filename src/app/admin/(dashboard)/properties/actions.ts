@@ -1,10 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdminUser } from "@/lib/admin-auth";
 import { propertyDraftSchema, type PropertyFormValues } from "@/lib/validations/property";
+import { LOCATIONS_CACHE_TAG } from "@/lib/taxonomy";
 import type { PropertyStatus } from "@prisma/client";
 
 /** Creates the property on first save, updates it on every step after — always as a Draft. */
@@ -173,6 +174,7 @@ export async function publishProperty(propertyId: string) {
 
   revalidatePath("/admin/properties");
   revalidatePath(`/properties/${property.slug}`);
+  revalidateTag(LOCATIONS_CACHE_TAG, { expire: 0 });
   return { ok: true as const };
 }
 
@@ -195,6 +197,7 @@ export async function changePropertyStatus(propertyId: string, status: PropertyS
 
   revalidatePath("/admin/properties");
   revalidatePath(`/properties/${property.slug}`);
+  revalidateTag(LOCATIONS_CACHE_TAG, { expire: 0 });
 }
 
 export async function toggleFeatured(propertyId: string, featured: boolean) {
@@ -231,6 +234,7 @@ export async function bulkChangeStatus(propertyIds: string[], status: PropertySt
   });
 
   revalidatePath("/admin/properties");
+  revalidateTag(LOCATIONS_CACHE_TAG, { expire: 0 });
 }
 
 export async function duplicateProperty(propertyId: string) {

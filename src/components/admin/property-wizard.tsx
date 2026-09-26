@@ -1,9 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { savePropertyDraft, publishProperty } from "@/app/admin/(dashboard)/properties/actions";
 import { slugify, type PropertyFormValues } from "@/lib/validations/property";
+import {
+  getCitiesForState,
+  getLocalitiesForCity,
+  getNeighbourhoodsForLocality,
+  type LocationOption,
+} from "@/app/admin/(dashboard)/properties/location-actions";
 import { ImageManager, type PropertyImageRow } from "./image-manager";
 
 const STEPS = [
@@ -20,10 +26,15 @@ const STEPS = [
 
 export interface WizardTaxonomy {
   categories: { id: string; name: string }[];
-  cities: { id: string; name: string }[];
-  localities: { id: string; cityId: string; name: string }[];
-  neighbourhoods: { id: string; localityId: string; name: string }[];
+  states: { id: string; name: string; countryCode: string }[];
   amenities: { id: string; name: string }[];
+}
+
+export interface WizardLocationChain {
+  stateId: string;
+  cities: LocationOption[];
+  localities: LocationOption[];
+  neighbourhoods: LocationOption[];
 }
 
 const input =
@@ -35,11 +46,13 @@ export function PropertyWizard({
   initialValues,
   images,
   taxonomy,
+  initialLocation,
 }: {
   propertyId: string | null;
   initialValues: Partial<PropertyFormValues>;
   images: PropertyImageRow[];
   taxonomy: WizardTaxonomy;
+  initialLocation?: WizardLocationChain;
 }) {
   const router = useRouter();
   const [propertyId, setPropertyId] = useState(initialPropertyId);
@@ -101,10 +114,54 @@ export function PropertyWizard({
     });
   }
 
-  const localities = taxonomy.localities.filter((l) => l.cityId === values.cityId);
-  const neighbourhoods = taxonomy.neighbourhoods.filter(
-    (n) => n.localityId === values.localityId,
-  );
+  // Dependent location dropdowns: State → City → Locality → Neighbourhood.
+  // Each list is fetched only when its parent is chosen.
+  const [stateId, setStateId] = useState(initialLocation?.stateId ?? "");
+  const [cities, setCities] = useState<LocationOption[]>(initialLocation?.cities ?? []);
+  const [localities, setLocalities] = useState<LocationOption[]>(initialLocation?.localities ?? []);
+  const [neighbourhoods, setNeighbourhoods] = useState<LocationOption[]>(initialLocation?.neighbourhoods ?? []);
+  const [loadingLevel, setLoadingLevel] = useState<"city" | "locality" | "neighbourhood" | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const requestId = useRef(0);
+
+  async function loadLevel<T>(level: "city" | "locality" | "neighbourhood", load: () => Promise<T>, apply: (result: T) => void) {
+    const id = ++requestId.current;
+    setLoadingLevel(level);
+    setLocationError(null);
+    try {
+      const result = await load();
+      if (id === requestId.current) apply(result);
+    } catch {
+      if (id === requestId.current) setLocationError("Couldn't load locations. Check your connection and try again.");
+    } finally {
+      if (id === requestId.current) setLoadingLevel(null);
+    }
+  }
+
+  function chooseState(next: string) {
+    setStateId(next);
+    setValues((prev) => ({ ...prev, cityId: undefined, localityId: undefined, neighbourhoodId: undefined }));
+    setCities([]);
+    setLocalities([]);
+    setNeighbourhoods([]);
+    setSaved(false);
+    if (next) void loadLevel("city", () => getCitiesForState(next), setCities);
+  }
+
+  function chooseCity(next: string) {
+    setValues((prev) => ({ ...prev, cityId: next || undefined, localityId: undefined, neighbourhoodId: undefined }));
+    setLocalities([]);
+    setNeighbourhoods([]);
+    setSaved(false);
+    if (next) void loadLevel("locality", () => getLocalitiesForCity(next), setLocalities);
+  }
+
+  function chooseLocality(next: string) {
+    setValues((prev) => ({ ...prev, localityId: next || undefined, neighbourhoodId: undefined }));
+    setNeighbourhoods([]);
+    setSaved(false);
+    if (next) void loadLevel("neighbourhood", () => getNeighbourhoodsForLocality(next), setNeighbourhoods);
+  }
 
   return (
     <div className="flex gap-8">
@@ -170,40 +227,72 @@ export function PropertyWizard({
         {step === 1 && (
           <section className="space-y-4">
             <div>
-              <label className={label}>City</label>
+              <label className={label} htmlFor="wizard-state">State / Union Territory</label>
               <select
+                id="wizard-state"
                 className={input}
-                value={values.cityId ?? ""}
-                onChange={(e) => set("cityId", e.target.value)}
+                value={stateId}
+                onChange={(e) => chooseState(e.target.value)}
               >
-                <option value="">Select a city</option>
-                {taxonomy.cities.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
+                <option value="">Select a state or UT</option>
+                {taxonomy.states.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className={label}>Locality</label>
+              <label className={label} htmlFor="wizard-city">City</label>
               <select
+                id="wizard-city"
+                className={input}
+                value={values.cityId ?? ""}
+                disabled={!stateId || loadingLevel === "city"}
+                onChange={(e) => chooseCity(e.target.value)}
+              >
+                <option value="">
+                  {!stateId ? "Select a state first" : loadingLevel === "city" ? "Loading cities…" : "Select a city"}
+                </option>
+                {cities.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              {stateId && loadingLevel !== "city" && cities.length === 0 && (
+                <p className="mt-1 text-xs text-ink-secondary">No cities for this state yet — add one under Locations.</p>
+              )}
+            </div>
+            <div>
+              <label className={label} htmlFor="wizard-locality">Locality</label>
+              <select
+                id="wizard-locality"
                 className={input}
                 value={values.localityId ?? ""}
-                onChange={(e) => set("localityId", e.target.value)}
+                disabled={!values.cityId || loadingLevel === "locality"}
+                onChange={(e) => chooseLocality(e.target.value)}
               >
-                <option value="">Select a locality</option>
+                <option value="">
+                  {!values.cityId ? "Select a city first" : loadingLevel === "locality" ? "Loading localities…" : "Select a locality"}
+                </option>
                 {localities.map((l) => (
                   <option key={l.id} value={l.id}>
                     {l.name}
                   </option>
                 ))}
               </select>
+              {values.cityId && loadingLevel !== "locality" && localities.length === 0 && (
+                <p className="mt-1 text-xs text-ink-secondary">No localities for this city yet — add one under Locations.</p>
+              )}
             </div>
             <div>
-              <label className={label}>Neighbourhood (optional)</label>
+              <label className={label} htmlFor="wizard-neighbourhood">Neighbourhood (optional)</label>
               <select
+                id="wizard-neighbourhood"
                 className={input}
                 value={values.neighbourhoodId ?? ""}
+                disabled={!values.localityId || loadingLevel === "neighbourhood"}
                 onChange={(e) => set("neighbourhoodId", e.target.value)}
               >
                 <option value="">None</option>
@@ -214,6 +303,11 @@ export function PropertyWizard({
                 ))}
               </select>
             </div>
+            {locationError && (
+              <p role="alert" className="rounded-sm border border-error/30 bg-error/5 p-3 text-sm text-error">
+                {locationError}
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={label}>Latitude</label>

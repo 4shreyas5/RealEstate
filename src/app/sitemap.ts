@@ -6,13 +6,16 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // Only cities/localities that actually have listings — a pan-India location
+  // taxonomy must not add hundreds of empty pages to the sitemap.
+  const listed = { properties: { some: { status: "PUBLISHED" as const } } };
   const [properties, cities, localities, categories] = await Promise.all([
     prisma.property.findMany({
       where: { status: { in: ["PUBLISHED", "UNDER_OFFER"] } },
       select: { slug: true, updatedAt: true },
     }),
-    prisma.city.findMany({ select: { slug: true } }),
-    prisma.locality.findMany({ select: { slug: true, city: { select: { slug: true } } } }),
+    prisma.city.findMany({ where: listed, select: { slug: true } }),
+    prisma.locality.findMany({ where: listed, select: { slug: true, city: { select: { slug: true } } } }),
     prisma.category.findMany({ select: { slug: true } }),
   ]);
 
@@ -44,6 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/buy`, changeFrequency: "hourly" },
     { url: `${SITE_URL}/rent`, changeFrequency: "hourly" },
     { url: `${SITE_URL}/search`, changeFrequency: "hourly" },
+    { url: `${SITE_URL}/locations`, changeFrequency: "daily" },
     ...cityRoutes,
     ...localityRoutes,
     ...categoryRoutesPerCity,
