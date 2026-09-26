@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { LinkButton } from "@/components/ui/button";
+import { DreamITLogo } from "@/components/brand/dreamit-logo";
 
 const primaryLinks = [
   { href: "/buy", label: "Buy" },
@@ -26,7 +27,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-canvas">
-      <div className="mx-auto flex h-16 max-w-(--breakpoint-xl) items-center gap-6 px-4 sm:px-6 lg:px-10">
+      <div className="mx-auto flex h-16 max-w-(--breakpoint-xl) items-center gap-3 px-4 sm:gap-6 sm:px-6 lg:px-10">
         <button
           type="button"
           className="-ml-2 flex items-center justify-center rounded-sm p-2 text-ink lg:hidden"
@@ -38,8 +39,12 @@ export function SiteHeader() {
           <MenuIcon open={menuOpen} />
         </button>
 
-        <Link href="/" className="font-display text-lg font-medium text-ink">
-          DreamIT
+        <Link
+          href="/"
+          aria-label="DreamIT home"
+          className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+        >
+          <DreamITLogo />
         </Link>
 
         <button

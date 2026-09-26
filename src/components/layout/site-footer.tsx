@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DreamITLogo } from "@/components/brand/dreamit-logo";
 
 const cityLinks = [{ href: "/lucknow", label: "Lucknow" }];
 
@@ -7,9 +8,9 @@ export function SiteFooter() {
     <footer className="mt-auto border-t border-border bg-canvas-alt">
       <div className="mx-auto grid max-w-(--breakpoint-xl) gap-10 px-4 py-16 text-sm sm:px-6 sm:grid-cols-3 lg:px-10">
         <div>
-          <p className="font-display text-base font-medium text-ink">
-            DreamIT
-          </p>
+          <Link href="/" aria-label="DreamIT home" className="inline-block">
+            <DreamITLogo />
+          </Link>
           <p className="mt-3 max-w-xs text-ink-secondary">
             Homes we&apos;ve seen, shortlisted, and are ready to talk you through.
           </p>
