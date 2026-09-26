@@ -1,4 +1,4 @@
-# Curated Properties
+# DreamIT
 
 A curated property discovery platform. Internal team-only listings — no public
 submissions, no owner/agent accounts, no online booking or payment. Users

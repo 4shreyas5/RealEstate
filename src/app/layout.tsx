@@ -19,14 +19,14 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: {
-    default: "Curated Properties",
-    template: "%s | Curated Properties",
+    default: "DreamIT — Your perfect home is our goal.",
+    template: "%s | DreamIT",
   },
   description:
     "A curated selection of properties, presented and shown by our team.",
   openGraph: {
     type: "website",
-    siteName: "Curated Properties",
+    siteName: "DreamIT",
   },
 };
 

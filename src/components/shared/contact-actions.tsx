@@ -20,7 +20,7 @@ export interface ContactContext {
 
 function buildWhatsAppMessage(context?: ContactContext) {
   if (!context?.title) {
-    return "Hi, I'd like to know more about properties on Curated Properties.";
+    return "Hi, I'd like to know more about properties on DreamIT.";
   }
   const location = context.locality ? ` in ${context.locality}` : "";
   const link = context.url ? ` (${context.url})` : "";

@@ -8,7 +8,7 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-(--breakpoint-xl) gap-10 px-4 py-16 text-sm sm:px-6 sm:grid-cols-3 lg:px-10">
         <div>
           <p className="font-display text-base font-medium text-ink">
-            Curated Properties
+            DreamIT
           </p>
           <p className="mt-3 max-w-xs text-ink-secondary">
             Homes we&apos;ve seen, shortlisted, and are ready to talk you through.
@@ -46,7 +46,7 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-border px-4 py-6 text-xs text-ink-tertiary sm:px-6 lg:px-10">
-        © {new Date().getFullYear()} Curated Properties. All rights reserved.
+        © {new Date().getFullYear()} DreamIT. All rights reserved.
       </div>
     </footer>
   );

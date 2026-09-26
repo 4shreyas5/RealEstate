@@ -27,7 +27,7 @@ export function AdminSidebar() {
       className="hidden w-56 shrink-0 flex-col gap-1 border-r border-border bg-canvas-alt p-4 lg:flex"
     >
       <Link href="/admin" className="mb-4 px-2 font-display text-base font-medium text-ink">
-        Curated Properties
+        DreamIT
       </Link>
       {sections.map((section) => {
         const active =

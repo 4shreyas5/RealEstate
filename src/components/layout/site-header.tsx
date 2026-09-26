@@ -39,7 +39,7 @@ export function SiteHeader() {
         </button>
 
         <Link href="/" className="font-display text-lg font-medium text-ink">
-          Curated Properties
+          DreamIT
         </Link>
 
         <button
