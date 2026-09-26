@@ -11,6 +11,13 @@ import {
   updateImageAltText,
   updateImageRoomLabel,
 } from "@/app/admin/(dashboard)/properties/image-actions";
+import {
+  ALLOWED_IMAGE_TYPES,
+  MAX_PROPERTY_IMAGE_BYTES,
+  PROPERTY_IMAGE_BUCKET,
+  buildPropertyImagePath,
+  isSupabaseStorageUrl,
+} from "@/lib/storage";
 
 export interface PropertyImageRow {
   id: string;
@@ -21,7 +28,8 @@ export interface PropertyImageRow {
   position: number;
 }
 
-const BUCKET = "property-images";
+const STORAGE_HINT =
+  "Storage bucket 'property-images' is missing or its upload policy isn't set up — see README (Storage setup).";
 
 export function ImageManager({
   propertyId,
@@ -32,27 +40,50 @@ export function ImageManager({
 }) {
   const [rows, setRows] = useState(images);
   const [uploading, setUploading] = useState(false);
+  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     setUploading(true);
+    setUploadErrors([]);
+    const errors: string[] = [];
     const supabase = createClient();
 
     for (const file of Array.from(files)) {
-      const path = `${propertyId}/${Date.now()}-${file.name}`;
-      const { error } = await supabase.storage.from(BUCKET).upload(path, file);
-      if (error) continue;
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        errors.push(`${file.name}: use a JPG, PNG, WebP or AVIF image.`);
+        continue;
+      }
+      if (file.size > MAX_PROPERTY_IMAGE_BYTES) {
+        errors.push(`${file.name}: larger than ${MAX_PROPERTY_IMAGE_BYTES / 1024 / 1024} MB.`);
+        continue;
+      }
+
+      const path = buildPropertyImagePath(propertyId, file);
+      const { error } = await supabase.storage
+        .from(PROPERTY_IMAGE_BUCKET)
+        .upload(path, file, { contentType: file.type, cacheControl: "31536000" });
+      if (error) {
+        errors.push(`${file.name}: upload failed (${error.message}). ${STORAGE_HINT}`);
+        continue;
+      }
 
       const {
         data: { publicUrl },
-      } = supabase.storage.from(BUCKET).getPublicUrl(path);
+      } = supabase.storage.from(PROPERTY_IMAGE_BUCKET).getPublicUrl(path);
 
-      const image = await addPropertyImage(propertyId, publicUrl);
-      setRows((prev) => [...prev, image]);
+      try {
+        const image = await addPropertyImage(propertyId, publicUrl);
+        setRows((prev) => [...prev, image]);
+      } catch {
+        await supabase.storage.from(PROPERTY_IMAGE_BUCKET).remove([path]);
+        errors.push(`${file.name}: uploaded but couldn't be saved to the property.`);
+      }
     }
 
+    setUploadErrors(errors);
     setUploading(false);
     if (inputRef.current) inputRef.current.value = "";
   }
@@ -82,12 +113,20 @@ export function ImageManager({
           id="image-upload"
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept={ALLOWED_IMAGE_TYPES.join(",")}
           multiple
           className="hidden"
           onChange={(e) => handleFiles(e.target.files)}
         />
       </label>
+
+      {uploadErrors.length > 0 && (
+        <ul role="alert" className="mt-3 rounded-sm border border-error/30 bg-error/5 p-3 text-sm text-error">
+          {uploadErrors.map((error) => (
+            <li key={error}>{error}</li>
+          ))}
+        </ul>
+      )}
 
       <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {rows
@@ -96,7 +135,21 @@ export function ImageManager({
           .map((image, index) => (
             <li key={image.id} className="rounded-sm border border-border bg-surface p-2">
               <div className="relative aspect-4/3 overflow-hidden rounded-xs bg-canvas-alt">
-                <Image src={image.url} alt={image.altText} fill sizes="200px" className="object-cover" />
+                {/* Placeholder (non-Storage) photos can't go through the optimizer in
+                    production — render them directly so they can still be seen and removed. */}
+                <Image
+                  src={image.url}
+                  alt={image.altText}
+                  fill
+                  sizes="200px"
+                  unoptimized={!isSupabaseStorageUrl(image.url)}
+                  className="object-cover"
+                />
+                {!isSupabaseStorageUrl(image.url) && (
+                  <span className="absolute bottom-1 left-1 rounded-xs bg-ink/80 px-1.5 py-0.5 text-[10px] font-medium text-canvas">
+                    Placeholder — replace
+                  </span>
+                )}
                 {image.isCover && (
                   <span className="absolute left-1 top-1 rounded-xs bg-accent px-1.5 py-0.5 text-[10px] font-medium text-canvas">
                     Cover

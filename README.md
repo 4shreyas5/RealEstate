@@ -42,10 +42,14 @@ directly; do not add one-off colors, spacing, radius, or shadow values.
    npm run db:seed
    ```
 
-6. **Create a Storage bucket** named `property-images` (Storage → New
-   bucket). Make it public (read) — property photos are served directly from
-   its public URL. Uploads happen client-side from the admin, authenticated
-   via Supabase Auth, so no service-role key is needed for that path.
+6. **Set up Storage** — run [`supabase/storage-setup.sql`](supabase/storage-setup.sql)
+   once in the Supabase SQL editor. It creates the public-read
+   `property-images` bucket (JPG/PNG/WebP/AVIF, 10 MB max) and policies that
+   let only `admin_users` upload/replace/delete. Uploads happen client-side
+   from the admin (authenticated via Supabase Auth), so no service-role key
+   is needed. Photos are served from
+   `https://<project>.supabase.co/storage/v1/object/public/property-images/...`,
+   the only remote host production allows (`next.config.ts`).
 
 7. **Create your first admin user**
    - Supabase dashboard → Authentication → Add user (email + password).

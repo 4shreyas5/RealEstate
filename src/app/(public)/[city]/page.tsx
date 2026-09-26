@@ -6,6 +6,7 @@ import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { searchProperties } from "@/lib/properties";
 import { PropertyGrid } from "@/components/property/property-grid";
+import { isRenderableImageUrl } from "@/lib/storage";
 import { EditorialImageCard } from "@/components/shared/editorial-image-card";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +44,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
   return (
     <div>
       <section className="relative flex min-h-[360px] items-end overflow-hidden bg-ink text-canvas">
-        {city.imageUrl && (
+        {isRenderableImageUrl(city.imageUrl) && (
           <Image src={city.imageUrl} alt="" fill sizes="100vw" className="object-cover opacity-70" />
         )}
         <div className="relative mx-auto w-full max-w-(--breakpoint-xl) px-4 pb-10 sm:px-6 lg:px-10">

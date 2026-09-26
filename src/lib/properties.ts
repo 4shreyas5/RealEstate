@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import type { ListingType, Prisma } from "@prisma/client";
+import { isRenderableImageUrl } from "@/lib/storage";
 
 /** The exact fields the property card needs — nothing else. */
 export interface PropertyCardData {
@@ -61,7 +62,7 @@ function toCardData(property: RawCardProperty): PropertyCardData {
     cityName: property.city.name,
     localityName: property.locality.name,
     status: property.status,
-    coverImage: property.images[0] ?? null,
+    coverImage: property.images[0] && isRenderableImageUrl(property.images[0].url) ? property.images[0] : null,
   };
 }
 

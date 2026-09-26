@@ -3,20 +3,33 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdminUser } from "@/lib/admin-auth";
+import { createClient } from "@/lib/supabase/server";
+import { PROPERTY_IMAGE_BUCKET, propertyImagePathFromUrl } from "@/lib/storage";
 
 /** Records an image already uploaded client-side to Supabase Storage. */
 export async function addPropertyImage(propertyId: string, url: string) {
   await requireAdminUser();
 
-  const count = await prisma.propertyImage.count({ where: { propertyId } });
+  // Only objects this property's own upload flow could have produced —
+  // never an arbitrary external URL.
+  const path = propertyImagePathFromUrl(url);
+  if (!path || !path.startsWith(`${propertyId}/`)) {
+    throw new Error("Image URL must be a property-images Storage URL for this property.");
+  }
+
+  const existing = await prisma.propertyImage.findMany({
+    where: { propertyId },
+    select: { position: true },
+  });
+  const nextPosition = existing.reduce((max, i) => Math.max(max, i.position), -1) + 1;
 
   const image = await prisma.propertyImage.create({
     data: {
       propertyId,
       url,
       altText: "",
-      position: count,
-      isCover: count === 0,
+      position: nextPosition,
+      isCover: existing.length === 0,
     },
   });
 
@@ -74,6 +87,17 @@ export async function removePropertyImage(propertyId: string, imageId: string) {
   await requireAdminUser();
 
   const removed = await prisma.propertyImage.delete({ where: { id: imageId } });
+
+  // Best-effort: drop the Storage object too so removed photos don't pile up
+  // as orphans. Placeholder (non-Storage) URLs have nothing to delete.
+  const objectPath = propertyImagePathFromUrl(removed.url);
+  if (objectPath) {
+    const supabase = await createClient();
+    const { data, error } = await supabase.storage.from(PROPERTY_IMAGE_BUCKET).remove([objectPath]);
+    if (error || !data || data.length === 0) {
+      console.error("property image removed from DB but Storage object was not deleted:", objectPath, error?.message);
+    }
+  }
 
   if (removed.isCover) {
     const next = await prisma.propertyImage.findFirst({

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { isRenderableImageUrl } from "@/lib/storage";
 
 /** Full-bleed image card with a single overline label — used for both
  * location and category discovery, so the two read as one family. */
@@ -21,7 +22,7 @@ export function EditorialImageCard({
       href={href}
       className={`group relative block aspect-4/5 shrink-0 overflow-hidden rounded-md bg-canvas-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ${className ?? ""}`}
     >
-      {imageUrl && (
+      {isRenderableImageUrl(imageUrl) && (
         <Image
           src={imageUrl}
           alt={imageAlt}

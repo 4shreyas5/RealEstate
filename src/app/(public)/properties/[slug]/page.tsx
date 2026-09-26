@@ -8,6 +8,7 @@ import { AmenitiesList } from "@/components/property/amenities-list";
 import { ContactPanel } from "@/components/property/contact-panel";
 import { ContactActionsRow } from "@/components/shared/contact-actions";
 import { PropertyGrid } from "@/components/property/property-grid";
+import { isRenderableImageUrl } from "@/lib/storage";
 import { PropertyLocationMap } from "@/components/property/property-location-map";
 
 const CLOSED_STATUSES = new Set(["SOLD", "RENTED", "UNAVAILABLE", "ARCHIVED"]);
@@ -93,7 +94,7 @@ export default async function PropertyDetailPage({
       />
       <div className="mx-auto max-w-(--breakpoint-xl) px-4 py-8 sm:px-6 lg:px-10">
         <PropertyGallery
-          images={property.images.map((img) => ({
+          images={property.images.filter((img) => isRenderableImageUrl(img.url)).map((img) => ({
             id: img.id,
             url: img.url,
             altText: img.altText,

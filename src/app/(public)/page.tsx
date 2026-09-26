@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { isRenderableImageUrl } from "@/lib/storage";
 import { DiscoverySearch } from "@/components/home/discovery-search";
 import { EditorialImageCard } from "@/components/shared/editorial-image-card";
 import { ContactActionsRow } from "@/components/shared/contact-actions";
@@ -24,10 +25,12 @@ export default async function HomePage() {
   return (
     <div>
       {/* Discovery hero — brand, slogan, Buy/Rent choice, then search */}
-      <section className="relative flex min-h-[480px] items-end overflow-hidden bg-ink text-canvas sm:min-h-[600px]">
-        {primaryCity && (
+      <section className="relative flex min-h-[480px] items-end overflow-hidden bg-gradient-to-br from-ink to-accent/40 text-canvas sm:min-h-[600px]">
+        {/* City photo from the database when it's a renderable (Storage) URL;
+            otherwise the section falls back to the plain gradient above. */}
+        {isRenderableImageUrl(primaryCity?.imageUrl) && (
           <Image
-            src={`https://picsum.photos/seed/${primaryCity.slug}-hero/1920/1080`}
+            src={primaryCity.imageUrl}
             alt=""
             fill
             priority

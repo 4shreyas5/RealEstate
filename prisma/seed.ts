@@ -2,8 +2,11 @@ import { PrismaClient, type ListingType, type AreaUnit } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// Placeholder photography for local/dev visual validation only — replace
-// with real listing photography before any non-dev environment goes live.
+// DEVELOPMENT-ONLY placeholder photography (picsum.photos). Production never
+// depends on it: next.config.ts does not allow this host in production
+// builds, and the public UI skips such URLs there. Do not run this seed
+// against a production database — real photos are uploaded through the
+// admin ImageManager into Supabase Storage.
 function placeholderImage(seed: string, w = 1200, h = 900) {
   return `https://picsum.photos/seed/${seed}/${w}/${h}`;
 }

@@ -33,7 +33,7 @@ export async function getExploreCategories(limit = 6) {
 
 export async function getAllCities() {
   const cities = await prisma.city.findMany({ orderBy: { name: "asc" } });
-  return cities.map((c) => ({ id: c.id, name: c.name, slug: c.slug }));
+  return cities.map((c) => ({ id: c.id, name: c.name, slug: c.slug, imageUrl: c.imageUrl }));
 }
 
 export async function getAllCategories() {
