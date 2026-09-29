@@ -1,7 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
-import { isRenderableImageUrl } from "@/lib/storage";
 import { DiscoverySearch } from "@/components/home/discovery-search";
+import { HeroCarousel } from "@/components/home/hero-carousel";
 import { EditorialImageCard } from "@/components/shared/editorial-image-card";
 import { ContactActionsRow } from "@/components/shared/contact-actions";
 import { PropertyGrid } from "@/components/property/property-grid";
@@ -35,56 +34,46 @@ export default async function HomePage() {
     <div>
       {/* Discovery hero — brand, slogan, Buy/Rent choice, then search */}
       <section className="relative flex min-h-[480px] items-end overflow-hidden bg-gradient-to-br from-ink to-accent/40 text-canvas sm:min-h-[600px]">
-        {/* City photo from the database when it's a renderable (Storage) URL;
-            otherwise the section falls back to the plain gradient above. */}
-        {isRenderableImageUrl(primaryCity?.imageUrl) && (
-          <Image
-            src={primaryCity.imageUrl}
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover opacity-70"
-          />
-        )}
-        <div className="relative mx-auto w-full max-w-(--breakpoint-xl) px-4 pb-16 sm:px-6 lg:px-10">
-          <h1 className="font-display max-w-xl text-4xl font-light sm:text-6xl">
-            Your perfect home is our goal.
-          </h1>
-          <p className="mt-4 max-w-md text-canvas/80">
-            Considered homes in {primaryCity?.name ?? "your city"} — seen,
-            shortlisted, and photographed by our own team.
-          </p>
+        <HeroCarousel>
+          <div className="relative mx-auto w-full max-w-(--breakpoint-xl) px-4 pb-16 sm:px-6 lg:px-10">
+            <h1 className="font-display max-w-xl text-4xl font-light [text-shadow:0_2px_20px_rgba(28,27,25,0.5)] sm:text-6xl">
+              Your perfect home is our goal.
+            </h1>
+            <p className="mt-4 max-w-md text-canvas/80 [text-shadow:0_1px_12px_rgba(28,27,25,0.5)]">
+              Considered homes in {primaryCity?.name ?? "your city"} — seen,
+              shortlisted, and photographed by our own team.
+            </p>
 
-          <div className="mt-8 grid max-w-md grid-cols-2 gap-4">
-            <Link
-              href="/buy"
-              className="rounded-md border border-canvas/40 bg-ink/40 p-5 transition-colors hover:bg-ink/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-canvas"
-            >
-              <span className="font-display block text-2xl font-medium text-canvas">Buy</span>
-              <span className="mt-1 block text-sm text-canvas/75">
-                Find a property to purchase
-              </span>
-            </Link>
-            <Link
-              href="/rent"
-              className="rounded-md border border-canvas/40 bg-ink/40 p-5 transition-colors hover:bg-ink/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-canvas"
-            >
-              <span className="font-display block text-2xl font-medium text-canvas">Rent</span>
-              <span className="mt-1 block text-sm text-canvas/75">
-                Find a property to rent
-              </span>
-            </Link>
-          </div>
+            <div className="mt-8 grid max-w-md grid-cols-2 gap-4">
+              <Link
+                href="/buy"
+                className="rounded-md border border-canvas/40 bg-ink/40 p-5 transition-colors hover:bg-ink/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-canvas"
+              >
+                <span className="font-display block text-2xl font-medium text-canvas">Buy</span>
+                <span className="mt-1 block text-sm text-canvas/75">
+                  Find a property to purchase
+                </span>
+              </Link>
+              <Link
+                href="/rent"
+                className="rounded-md border border-canvas/40 bg-ink/40 p-5 transition-colors hover:bg-ink/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-canvas"
+              >
+                <span className="font-display block text-2xl font-medium text-canvas">Rent</span>
+                <span className="mt-1 block text-sm text-canvas/75">
+                  Find a property to rent
+                </span>
+              </Link>
+            </div>
 
-          <div className="mt-8">
-            <DiscoverySearch
-              cities={searchCities}
-              categories={categories}
-              defaultCityId={primaryCity?.id}
-            />
+            <div className="mt-8">
+              <DiscoverySearch
+                cities={searchCities}
+                categories={categories}
+                defaultCityId={primaryCity?.id}
+              />
+            </div>
           </div>
-        </div>
+        </HeroCarousel>
       </section>
 
       {/* Featured/curated properties */}
