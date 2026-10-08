@@ -8,6 +8,7 @@ import { searchProperties } from "@/lib/properties";
 import { PropertyGrid } from "@/components/property/property-grid";
 import { isRenderableImageUrl } from "@/lib/storage";
 import { EditorialImageCard } from "@/components/shared/editorial-image-card";
+import { getT } from "@/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,14 @@ export async function generateMetadata({
   return {
     title: `Properties in ${city.name}`,
     description: `Curated properties in ${city.name}, shown and shortlisted by our team.`,
-    alternates: { canonical: `/${city.slug}` },
+    alternates: {
+      canonical: `/${city.slug}`,
+      languages: {
+        en: `/${city.slug}?hl=en`,
+        hi: `/${city.slug}?hl=hi`,
+        "x-default": `/${city.slug}?hl=en`,
+      },
+    },
   };
 }
 
@@ -39,7 +47,10 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
   const city = await getCity(citySlug);
   if (!city) notFound();
 
-  const { properties, count } = await searchProperties({ cityId: city.id });
+  const [{ properties, count }, { t, locale }] = await Promise.all([
+    searchProperties({ cityId: city.id }),
+    getT(),
+  ]);
 
   return (
     <div>
@@ -48,14 +59,14 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
           <Image src={city.imageUrl} alt="" fill sizes="100vw" className="object-cover opacity-70" />
         )}
         <div className="relative mx-auto w-full max-w-(--breakpoint-xl) px-4 pb-10 sm:px-6 lg:px-10">
-          <h1 className="font-display text-4xl font-light">Properties in {city.name}</h1>
-          <p className="mt-2 text-canvas/80">{count} curated homes</p>
+          <h1 className="font-display text-4xl font-light">{t("locations.propertiesInCity", { city: city.name })}</h1>
+          <p className="mt-2 text-canvas/80">{t("property.curatedHomes", { count })}</p>
         </div>
       </section>
 
       {city.localities.length > 0 && (
         <section className="mx-auto max-w-(--breakpoint-xl) px-4 py-12 sm:px-6 lg:px-10">
-          <h2 className="font-display text-xl font-medium text-ink">Localities</h2>
+          <h2 className="font-display text-xl font-medium text-ink">{t("locations.localities")}</h2>
           <div className="mt-6 flex gap-4 overflow-x-auto pb-2 lg:grid lg:grid-cols-4 lg:overflow-visible">
             {city.localities.map((locality) => (
               <EditorialImageCard
@@ -73,13 +84,13 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
 
       <section className="mx-auto max-w-(--breakpoint-xl) px-4 py-12 sm:px-6 lg:px-10">
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-xl font-medium text-ink">All properties</h2>
+          <h2 className="font-display text-xl font-medium text-ink">{t("locations.allProperties")}</h2>
           <Link href={`/search?city=${city.id}`} className="text-sm font-medium text-accent">
-            Refine on the full search
+            {t("locations.refineOnFullSearch")}
           </Link>
         </div>
         <div className="mt-6">
-          <PropertyGrid properties={properties} priorityCount={3} />
+          <PropertyGrid properties={properties} priorityCount={3} t={t} locale={locale} />
         </div>
       </section>
     </div>

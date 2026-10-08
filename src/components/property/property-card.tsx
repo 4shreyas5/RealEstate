@@ -2,33 +2,44 @@ import Image from "next/image";
 import Link from "next/link";
 import { formatArea, formatPrice } from "@/lib/format";
 import type { PropertyCardData } from "@/lib/properties";
-
-const STATUS_LABEL: Partial<Record<PropertyCardData["status"], string>> = {
-  UNDER_OFFER: "Under offer",
-  SOLD: "Sold",
-  RENTED: "Rented",
-};
+import type { Translator } from "@/i18n/translate";
+import type { Locale } from "@/i18n/config";
 
 /**
  * The single property-card component reused across the homepage, search
  * results, similar properties, and location/category pages. Photo, price,
  * title, location, beds/baths/area — nothing else. No badge stacking.
+ *
+ * Rendered from both Server Components (homepage, city/locality pages) and
+ * a Client Component (search-experience.tsx), so it stays a plain prop-only
+ * component — translation comes in as `t`, not from a hook or cookies().
  */
 export function PropertyCard({
   property,
+  t,
+  locale = "en",
   priority = false,
   sizes = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw",
 }: {
   property: PropertyCardData;
+  t: Translator;
+  locale?: Locale;
   priority?: boolean;
   /** Override for contexts where the card isn't in the standard 1/2/3-col grid (e.g. the ~45%-wide search results list). */
   sizes?: string;
 }) {
-  const statusLabel = STATUS_LABEL[property.status];
+  const statusLabel =
+    property.status === "UNDER_OFFER"
+      ? t("property.underOffer")
+      : property.status === "SOLD"
+        ? t("property.sold")
+        : property.status === "RENTED"
+          ? t("property.rented")
+          : null;
   const specs = [
-    property.bedrooms !== null && `${property.bedrooms} bd`,
-    property.bathrooms !== null && `${property.bathrooms} ba`,
-    formatArea(property.areaValue, property.areaUnit),
+    property.bedrooms !== null && t("property.bedsAbbrev", { count: property.bedrooms }),
+    property.bathrooms !== null && t("property.bathsAbbrev", { count: property.bathrooms }),
+    formatArea(property.areaValue, property.areaUnit, locale),
   ].filter(Boolean);
 
   return (
@@ -48,7 +59,7 @@ export function PropertyCard({
           />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-ink-tertiary">
-            No photo yet
+            {t("property.noPhotoYet")}
           </div>
         )}
 
@@ -59,7 +70,7 @@ export function PropertyCard({
         )}
 
         <span className="absolute right-3 top-3 rounded-xs bg-surface/95 px-2 py-1 text-xs font-medium text-ink-secondary">
-          {property.listingType === "SALE" ? "For Sale" : "For Rent"}
+          {property.listingType === "SALE" ? t("property.forSale") : t("property.forRent")}
         </span>
       </div>
 
@@ -69,7 +80,7 @@ export function PropertyCard({
           {property.listingType === "RENT" && (
             <span className="text-sm font-normal text-ink-secondary">
               {" "}
-              /{property.rentPeriod === "YEARLY" ? "yr" : "mo"}
+              /{property.rentPeriod === "YEARLY" ? t("property.perYear") : t("property.perMonth")}
             </span>
           )}
         </p>

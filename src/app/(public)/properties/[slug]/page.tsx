@@ -10,6 +10,7 @@ import { ContactActionsRow } from "@/components/shared/contact-actions";
 import { PropertyGrid } from "@/components/property/property-grid";
 import { isRenderableImageUrl } from "@/lib/storage";
 import { PropertyLocationMap } from "@/components/property/property-location-map";
+import { getT } from "@/i18n/server";
 
 const CLOSED_STATUSES = new Set(["SOLD", "RENTED", "UNAVAILABLE", "ARCHIVED"]);
 
@@ -33,7 +34,14 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: { canonical: `/properties/${property.slug}` },
+    alternates: {
+      canonical: `/properties/${property.slug}`,
+      languages: {
+        en: `/properties/${property.slug}?hl=en`,
+        hi: `/properties/${property.slug}?hl=hi`,
+        "x-default": `/properties/${property.slug}?hl=en`,
+      },
+    },
     robots: noindex ? { index: false, follow: true } : undefined,
     openGraph: {
       title,
@@ -54,7 +62,10 @@ export default async function PropertyDetailPage({
 
   if (!property || property.status === "DRAFT") notFound();
 
-  const similar = await getSimilarProperties(property.id, property.localityId, 6);
+  const [similar, { t, locale }] = await Promise.all([
+    getSimilarProperties(property.id, property.localityId, 6),
+    getT(),
+  ]);
   const isClosed = CLOSED_STATUSES.has(property.status);
 
   const context = {
@@ -106,7 +117,7 @@ export default async function PropertyDetailPage({
           <div>
             {isClosed && (
               <p className="mb-4 rounded-sm border border-border-strong bg-canvas-alt px-4 py-3 text-sm text-ink-secondary">
-                This home is no longer available. Explore similar homes below.
+                {t("propertyDetail.noLongerAvailable")}
               </p>
             )}
 
@@ -114,7 +125,7 @@ export default async function PropertyDetailPage({
             <p className="mt-2 font-sans text-2xl font-semibold tabular-nums text-ink">
               {formatPrice(Number(property.priceAmount), property.priceCurrency)}
               <span className="ml-2 text-sm font-normal text-ink-secondary">
-                {formatListingType(property.listingType, property.rentPeriod)}
+                {formatListingType(property.listingType, property.rentPeriod, locale)}
               </span>
             </p>
             <p className="mt-1 text-ink-secondary">
@@ -139,17 +150,20 @@ export default async function PropertyDetailPage({
                   possessionDate: property.possessionDate,
                   parkingSpaces: property.parkingSpaces,
                 }}
+                t={t}
+                locale={locale}
               />
             </div>
 
             <div className="mt-6 border-b border-border py-6">
-              <h2 className="font-display text-xl font-medium text-ink">About this home</h2>
+              <h2 className="font-display text-xl font-medium text-ink">{t("propertyDetail.aboutThisHome")}</h2>
               <p className="mt-3 whitespace-pre-wrap text-ink-secondary">{property.description}</p>
             </div>
 
-            <AmenitiesList amenities={property.amenities.map((a) => a.amenity)} />
+            <AmenitiesList amenities={property.amenities.map((a) => a.amenity)} t={t} />
 
             <SecondarySpecs
+              t={t}
               specs={{
                 bedrooms: property.bedrooms,
                 bathrooms: property.bathrooms,
@@ -169,7 +183,7 @@ export default async function PropertyDetailPage({
 
             {property.latitude !== null && property.longitude !== null && (
               <div className="py-6">
-                <h2 className="font-display text-xl font-medium text-ink">Location</h2>
+                <h2 className="font-display text-xl font-medium text-ink">{t("propertyDetail.location")}</h2>
                 <div className="mt-4">
                   <PropertyLocationMap latitude={property.latitude} longitude={property.longitude} />
                 </div>
@@ -190,17 +204,17 @@ export default async function PropertyDetailPage({
       {similar.length > 0 && (
         <section className="border-t border-border bg-canvas-alt py-16">
           <div className="mx-auto max-w-(--breakpoint-xl) px-4 sm:px-6 lg:px-10">
-            <h2 className="font-display text-2xl font-medium text-ink">Similar properties</h2>
+            <h2 className="font-display text-2xl font-medium text-ink">{t("propertyDetail.similarProperties")}</h2>
             <div className="mt-8">
-              <PropertyGrid properties={similar} />
+              <PropertyGrid properties={similar} t={t} locale={locale} />
             </div>
           </div>
         </section>
       )}
 
       <section className="py-16 text-center">
-        <h2 className="font-display text-2xl font-medium text-ink">Still deciding?</h2>
-        <p className="mt-2 text-ink-secondary">Talk to the team that knows this home.</p>
+        <h2 className="font-display text-2xl font-medium text-ink">{t("propertyDetail.stillDeciding")}</h2>
+        <p className="mt-2 text-ink-secondary">{t("propertyDetail.talkToTeam")}</p>
         <div className="mt-6 flex justify-center">
           <ContactActionsRow context={{ ...context, source: "detail_final_cta" }} />
         </div>

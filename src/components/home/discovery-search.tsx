@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useT } from "@/i18n/locale-context";
 
 export interface SearchOption {
   id: string;
@@ -24,6 +25,7 @@ export function DiscoverySearch({
   defaultCityId?: string;
 }) {
   const router = useRouter();
+  const { t } = useT();
   const [cityId, setCityId] = useState(cities.some((c) => c.id === defaultCityId) ? defaultCityId! : (cities[0]?.id ?? ""));
   const [listingType, setListingType] = useState<"SALE" | "RENT">("SALE");
   const [categoryId, setCategoryId] = useState("");
@@ -58,13 +60,13 @@ export function DiscoverySearch({
                 : "rounded-xs px-3 py-1.5 text-ink-secondary"
             }
           >
-            {type === "SALE" ? "Buy" : "Rent"}
+            {type === "SALE" ? t("nav.buy") : t("nav.rent")}
           </button>
         ))}
       </div>
 
       <label className="sr-only" htmlFor="search-city">
-        City
+        {t("search.cityLabel")}
       </label>
       <select
         id="search-city"
@@ -80,7 +82,7 @@ export function DiscoverySearch({
       </select>
 
       <label className="sr-only" htmlFor="search-category">
-        Property type
+        {t("search.propertyType")}
       </label>
       <select
         id="search-category"
@@ -88,7 +90,7 @@ export function DiscoverySearch({
         onChange={(e) => setCategoryId(e.target.value)}
         className="flex-1 rounded-sm border border-border px-3 py-2.5 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
       >
-        <option value="">Any type</option>
+        <option value="">{t("search.anyType")}</option>
         {categories.map((category) => (
           <option key={category.id} value={category.id}>
             {category.name}
@@ -97,7 +99,7 @@ export function DiscoverySearch({
       </select>
 
       <label className="sr-only" htmlFor="search-bedrooms">
-        Bedrooms
+        {t("propertyDetail.specBedrooms")}
       </label>
       <select
         id="search-bedrooms"
@@ -105,10 +107,10 @@ export function DiscoverySearch({
         onChange={(e) => setBedrooms(e.target.value)}
         className="rounded-sm border border-border px-3 py-2.5 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
       >
-        <option value="">Any beds</option>
+        <option value="">{t("search.anyBeds")}</option>
         {[1, 2, 3, 4, 5].map((n) => (
           <option key={n} value={n}>
-            {n}+ bd
+            {t("search.bedsPlus", { count: n })}
           </option>
         ))}
       </select>
@@ -117,7 +119,7 @@ export function DiscoverySearch({
         type="submit"
         className="rounded-sm bg-accent px-6 py-2.5 text-sm font-medium text-canvas hover:bg-accent-hover"
       >
-        Search
+        {t("nav.search")}
       </button>
     </form>
   );

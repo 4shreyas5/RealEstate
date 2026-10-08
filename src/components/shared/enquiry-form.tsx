@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getUtmFromLocation } from "@/lib/utm";
+import { useT } from "@/i18n/locale-context";
 
 export interface EnquiryContext {
   propertyId?: string;
@@ -23,9 +24,14 @@ export function EnquiryForm({
   context: EnquiryContext;
   onSuccess?: () => void;
 }) {
+  const { t } = useT();
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [message, setMessage] = useState(
-    context.title ? `I'm interested in ${context.title}${context.locality ? ` in ${context.locality}` : ""}.` : "",
+    context.title
+      ? context.locality
+        ? t("contact.interestedInMessageWithLocality", { title: context.title, locality: context.locality }) + "."
+        : t("contact.interestedInMessage", { title: context.title }) + "."
+      : "",
   );
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -61,7 +67,7 @@ export function EnquiryForm({
   if (status === "success") {
     return (
       <p className="rounded-sm border border-success/30 bg-success/5 px-4 py-3 text-sm text-success">
-        Thanks — our team will reach out shortly.
+        {t("forms.thanksWeWillReachOut")}
       </p>
     );
   }
@@ -70,25 +76,25 @@ export function EnquiryForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className={label} htmlFor="enquiry-name">
-          Name
+          {t("forms.name")}
         </label>
         <input id="enquiry-name" name="name" required className={input} />
       </div>
       <div>
         <label className={label} htmlFor="enquiry-phone">
-          Phone
+          {t("forms.phone")}
         </label>
         <input id="enquiry-phone" name="phone" type="tel" required className={input} />
       </div>
       <div>
         <label className={label} htmlFor="enquiry-email">
-          Email (optional)
+          {t("forms.emailOptional")}
         </label>
         <input id="enquiry-email" name="email" type="email" className={input} />
       </div>
       <div>
         <label className={label} htmlFor="enquiry-message">
-          Message
+          {t("forms.message")}
         </label>
         <textarea
           id="enquiry-message"
@@ -100,7 +106,7 @@ export function EnquiryForm({
       </div>
 
       {status === "error" && (
-        <p className="text-sm text-error">Something went wrong — please try again.</p>
+        <p className="text-sm text-error">{t("forms.somethingWentWrongRetry")}</p>
       )}
 
       <button
@@ -108,7 +114,7 @@ export function EnquiryForm({
         disabled={status === "submitting"}
         className="w-full rounded-sm bg-accent px-4 py-3 text-sm font-medium text-canvas hover:bg-accent-hover disabled:opacity-40"
       >
-        {status === "submitting" ? "Sending…" : "Send enquiry"}
+        {status === "submitting" ? t("forms.sending") : t("forms.sendEnquiry")}
       </button>
     </form>
   );

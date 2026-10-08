@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { DreamITLogo } from "@/components/brand/dreamit-logo";
+import { getT } from "@/i18n/server";
 
-export function SiteFooter({ cities }: { cities: { id: string; name: string; slug: string }[] }) {
+export async function SiteFooter({ cities }: { cities: { id: string; name: string; slug: string }[] }) {
+  const { t } = await getT();
   const cityLinks = cities.slice(0, 8).map((c) => ({ href: `/${c.slug}`, label: c.name }));
 
   return (
@@ -11,18 +13,16 @@ export function SiteFooter({ cities }: { cities: { id: string; name: string; slu
           <Link href="/" aria-label="DreamIT home" className="inline-block">
             <DreamITLogo />
           </Link>
-          <p className="mt-3 max-w-xs text-ink-secondary">
-            Homes we&apos;ve seen, shortlisted, and are ready to talk you through.
-          </p>
+          <p className="mt-3 max-w-xs text-ink-secondary">{t("footer.tagline")}</p>
         </div>
 
         <div>
-          <p className="font-medium text-ink">Cities</p>
+          <p className="font-medium text-ink">{t("footer.cities")}</p>
           <ul className="mt-3 space-y-2">
             {cityLinks.length === 0 && (
               <li>
                 <Link href="/locations" className="text-ink-secondary hover:text-ink">
-                  All locations
+                  {t("nav.allLocations")}
                 </Link>
               </li>
             )}
@@ -37,16 +37,16 @@ export function SiteFooter({ cities }: { cities: { id: string; name: string; slu
         </div>
 
         <div>
-          <p className="font-medium text-ink">Company</p>
+          <p className="font-medium text-ink">{t("footer.company")}</p>
           <ul className="mt-3 space-y-2">
             <li>
               <Link href="/about" className="text-ink-secondary hover:text-ink">
-                About
+                {t("footer.about")}
               </Link>
             </li>
             <li>
               <Link href="/contact" className="text-ink-secondary hover:text-ink">
-                Contact
+                {t("footer.contact")}
               </Link>
             </li>
           </ul>
@@ -54,7 +54,7 @@ export function SiteFooter({ cities }: { cities: { id: string; name: string; slu
       </div>
 
       <div className="border-t border-border px-4 py-6 text-xs text-ink-tertiary sm:px-6 lg:px-10">
-        © {new Date().getFullYear()} DreamIT. All rights reserved.
+        {t("footer.copyright", { year: new Date().getFullYear() })}
       </div>
     </footer>
   );

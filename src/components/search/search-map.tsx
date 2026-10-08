@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { formatPrice } from "@/lib/format";
 import type { PropertyCardData } from "@/lib/properties";
+import { useT } from "@/i18n/locale-context";
 
 export interface MapProperty extends PropertyCardData {
   latitude: number | null;
@@ -24,6 +25,7 @@ export function SearchMap({
   selectedId: string | null;
   onSelect: (id: string | null) => void;
 }) {
+  const { t } = useT();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -139,7 +141,7 @@ export function SearchMap({
   if (!TOKEN) {
     return (
       <div className="flex h-full items-center justify-center rounded-md bg-canvas-alt p-6 text-center text-sm text-ink-secondary">
-        Map unavailable — showing list only.
+        {t("search.mapUnavailable")}
       </div>
     );
   }
@@ -156,7 +158,7 @@ export function SearchMap({
               setPreviewId(null);
               onSelect(null);
             }}
-            aria-label="Close preview"
+            aria-label={t("search.closePreview")}
             className="absolute right-2 top-2 text-ink-tertiary hover:text-ink"
           >
             ×

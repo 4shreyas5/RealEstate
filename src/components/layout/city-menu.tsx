@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/i18n/locale-context";
 
 export interface NavCity {
   id: string;
@@ -18,6 +19,7 @@ export function CityMenu({ cities }: { cities: NavCity[] }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const { t } = useT();
   const current = cities.find((c) => pathname === `/${c.slug}` || pathname.startsWith(`/${c.slug}/`));
 
   useEffect(() => {
@@ -43,7 +45,7 @@ export function CityMenu({ cities }: { cities: NavCity[] }) {
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-1 rounded-sm px-3 py-2 text-sm font-medium text-ink hover:bg-canvas-alt"
       >
-        {current?.name ?? "Cities"}
+        {current?.name ?? t("nav.cities")}
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
           <path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -65,7 +67,7 @@ export function CityMenu({ cities }: { cities: NavCity[] }) {
             onClick={() => setOpen(false)}
             className="block border-t border-border px-3 py-2 text-sm font-medium text-accent hover:bg-canvas-alt"
           >
-            All locations
+            {t("nav.allLocations")}
           </Link>
         </div>
       )}

@@ -77,9 +77,13 @@
   /* Spacing — extra step for space-8 (120px); 1–7 already match Tailwind's default scale */
   --spacing-30: 7.5rem;
 
-  /* Typography */
-  --font-sans: var(--font-inter), -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  /* Typography — Devanagari fallbacks come before system fonts so Hindi
+     glyphs render in a matching weight instead of falling through to
+     whatever Devanagari font the OS happens to ship (see RootLayout). */
+  --font-sans: var(--font-inter), var(--font-noto-sans-devanagari), -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+  --font-display: var(--font-fraunces), var(--font-noto-serif-devanagari), Georgia, "Times New Roman",
+    serif;
 }
 
 @media (prefers-color-scheme: dark) {

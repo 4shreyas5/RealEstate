@@ -4,6 +4,8 @@ import { useRef } from "react";
 import { LinkButton } from "@/components/ui/button";
 import { EnquiryForm, type EnquiryContext } from "./enquiry-form";
 import { getUtmFromLocation } from "@/lib/utm";
+import { useT } from "@/i18n/locale-context";
+import type { Translator } from "@/i18n/translate";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "";
 const CONTACT_PHONE = process.env.NEXT_PUBLIC_CONTACT_PHONE ?? "";
@@ -18,13 +20,15 @@ export interface ContactContext {
   source: string;
 }
 
-function buildWhatsAppMessage(context?: ContactContext) {
+function buildWhatsAppMessage(context: ContactContext | undefined, t: Translator) {
   if (!context?.title) {
-    return "Hi, I'd like to know more about properties on DreamIT.";
+    return t("contact.defaultWhatsAppMessage");
   }
-  const location = context.locality ? ` in ${context.locality}` : "";
+  const base = context.locality
+    ? t("contact.interestedInMessageWithLocality", { title: context.title, locality: context.locality })
+    : t("contact.interestedInMessage", { title: context.title });
   const link = context.url ? ` (${context.url})` : "";
-  return `Hi, I'm interested in ${context.title}${location}${link}.`;
+  return `${base}${link}.`;
 }
 
 /** Fire-and-forget lead event for a WhatsApp/Call click — never blocks navigation. */
@@ -51,11 +55,12 @@ function trackAction(actionType: "WHATSAPP" | "CALL", context?: ContactContext) 
  * brand color.
  */
 export function WhatsAppCTA({ context, className }: { context?: ContactContext; className?: string }) {
+  const { t } = useT();
   if (!WHATSAPP_NUMBER) {
     return <DisabledCTA className={className}><WhatsAppIcon />WhatsApp</DisabledCTA>;
   }
 
-  const message = buildWhatsAppMessage(context);
+  const message = buildWhatsAppMessage(context, t);
   const href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 
   return (
@@ -73,8 +78,9 @@ export function WhatsAppCTA({ context, className }: { context?: ContactContext; 
 }
 
 export function CallCTA({ context, className }: { context?: ContactContext; className?: string }) {
+  const { t } = useT();
   if (!CONTACT_PHONE) {
-    return <DisabledCTA className={className}><PhoneIcon />Call</DisabledCTA>;
+    return <DisabledCTA className={className}><PhoneIcon />{t("contact.call")}</DisabledCTA>;
   }
 
   return (
@@ -85,17 +91,18 @@ export function CallCTA({ context, className }: { context?: ContactContext; clas
       onClick={() => trackAction("CALL", context)}
     >
       <PhoneIcon />
-      Call
+      {t("contact.call")}
     </LinkButton>
   );
 }
 
 /** Renders when a contact channel's number isn't configured — visibly inert rather than a broken/misleading link. */
 function DisabledCTA({ className, children }: { className?: string; children: React.ReactNode }) {
+  const { t } = useT();
   return (
     <span
       aria-disabled="true"
-      title="Not configured"
+      title={t("contact.notConfigured")}
       className={`inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-sm border border-border px-6 py-3 text-sm font-medium text-ink-tertiary ${className ?? ""}`}
     >
       {children}
@@ -104,6 +111,7 @@ function DisabledCTA({ className, children }: { className?: string; children: Re
 }
 
 export function EnquiryCTA({ context, className }: { context: ContactContext; className?: string }) {
+  const { t } = useT();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const enquiryContext: EnquiryContext = context;
 
@@ -114,7 +122,7 @@ export function EnquiryCTA({ context, className }: { context: ContactContext; cl
         onClick={() => dialogRef.current?.showModal()}
         className={`inline-flex items-center justify-center gap-2 rounded-sm border border-border-strong px-6 py-3 text-sm font-medium text-ink transition-colors hover:bg-canvas-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ${className ?? ""}`}
       >
-        Enquire
+        {t("contact.enquire")}
       </button>
       <dialog
         ref={dialogRef}
@@ -122,12 +130,12 @@ export function EnquiryCTA({ context, className }: { context: ContactContext; cl
       >
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h2 className="font-display text-lg font-medium text-ink">
-            {context.title ? `Ask about ${context.title}` : "Send an enquiry"}
+            {context.title ? t("contact.askAbout", { title: context.title }) : t("contact.sendAnEnquiry")}
           </h2>
           <button
             type="button"
             onClick={() => dialogRef.current?.close()}
-            aria-label="Close"
+            aria-label={t("contact.close")}
             className="text-ink-secondary"
           >
             ×

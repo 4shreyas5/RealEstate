@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PropertyCard } from "@/components/property/property-card";
 import { PropertyGridEmptyState } from "@/components/property/property-grid";
+import { useT } from "@/i18n/locale-context";
 import { SearchMap, type MapProperty } from "./search-map";
 import { FilterSheet, type FilterTaxonomy } from "./filter-sheet";
 
@@ -13,7 +14,7 @@ export function SearchExperience({
   hasMore,
   taxonomy,
   lockedType,
-  emptyMessage = "No properties match these filters. Try widening your price range or clearing a filter.",
+  emptyMessage,
 }: {
   properties: MapProperty[];
   count: number;
@@ -21,11 +22,14 @@ export function SearchExperience({
   taxonomy: FilterTaxonomy;
   /** Set on the dedicated /buy and /rent routes — the transaction type is the page's identity, not a removable filter. */
   lockedType?: "SALE" | "RENT";
+  /** Server-resolved, already translated — a Client Component can't accept `t` itself as a prop from a Server Component. */
   emptyMessage?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { t, locale } = useT();
+  const resolvedEmptyMessage = emptyMessage ?? t("search.noPropertiesMatch");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -89,30 +93,30 @@ export function SearchExperience({
     // On /buy and /rent, the transaction type is the page itself, not a
     // removable filter chip — only surface it as a chip on generic /search.
     const type = searchParams.get("type");
-    if (!lockedType && type) chips.push({ key: "type", label: type === "SALE" ? "Buy" : "Rent" });
+    if (!lockedType && type) chips.push({ key: "type", label: type === "SALE" ? t("nav.buy") : t("nav.rent") });
     const city = searchParams.get("city");
     if (city) {
       const found = taxonomy.cities.find((c) => c.id === city);
-      chips.push({ key: "city", label: found?.name ?? "City" });
+      chips.push({ key: "city", label: found?.name ?? t("search.chipCity") });
     }
-    if (searchParams.get("locality")) chips.push({ key: "locality", label: "Locality" });
+    if (searchParams.get("locality")) chips.push({ key: "locality", label: t("search.chipLocality") });
     const category = searchParams.get("category");
     if (category) {
       const found = taxonomy.categories.find((c) => c.id === category);
       if (found) chips.push({ key: "category", label: found.name });
     }
     const bedrooms = searchParams.get("bedrooms");
-    if (bedrooms) chips.push({ key: "bedrooms", label: `${bedrooms}+ bd` });
+    if (bedrooms) chips.push({ key: "bedrooms", label: t("search.bedsPlus", { count: Number(bedrooms) }) });
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
     if (minPrice || maxPrice) {
       chips.push({
         key: "price",
-        label: `${minPrice ?? "0"} – ${maxPrice ?? "Any"}`,
+        label: t("search.chipPriceRange", { min: minPrice ?? "0", max: maxPrice ?? t("search.any") }),
       });
     }
     return chips;
-  }, [searchParams, taxonomy.categories, taxonomy.cities, lockedType]);
+  }, [searchParams, taxonomy.categories, taxonomy.cities, lockedType, t]);
 
   function clearChip(key: string) {
     if (key === "city") {
@@ -138,11 +142,11 @@ export function SearchExperience({
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-4 sm:px-6 lg:px-10">
         <p className="text-sm text-ink-secondary" aria-live="polite">
-          {count} {count === 1 ? "home" : "homes"}
+          {t("search.homesCount", { count })}
         </p>
         <div className="flex items-center gap-3">
           <label className="sr-only" htmlFor="search-sort">
-            Sort
+            {t("search.sort")}
           </label>
           <select
             id="search-sort"
@@ -150,16 +154,16 @@ export function SearchExperience({
             onChange={(e) => updateParam("sort", e.target.value)}
             className="rounded-sm border border-border bg-surface px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/30"
           >
-            <option value="newest">Newest</option>
-            <option value="price_asc">Price: low to high</option>
-            <option value="price_desc">Price: high to low</option>
+            <option value="newest">{t("search.newest")}</option>
+            <option value="price_asc">{t("search.priceLowHigh")}</option>
+            <option value="price_desc">{t("search.priceHighLow")}</option>
           </select>
           <button
             type="button"
             onClick={() => setSheetOpen(true)}
             className="rounded-sm border border-border-strong px-4 py-2 text-sm font-medium text-ink hover:bg-canvas-alt"
           >
-            More filters
+            {t("search.moreFilters")}
           </button>
         </div>
       </div>
@@ -178,7 +182,7 @@ export function SearchExperience({
             </button>
           ))}
           <button type="button" onClick={clearAll} className="text-xs text-ink-secondary underline">
-            Clear all
+            {t("search.clearAll")}
           </button>
         </div>
       )}
@@ -190,7 +194,7 @@ export function SearchExperience({
           onClick={() => setMobileView((v) => (v === "list" ? "map" : "list"))}
           className="rounded-full border border-border-strong bg-surface px-5 py-2 text-sm font-medium text-ink shadow-md"
         >
-          {mobileView === "list" ? "Map" : "List"}
+          {mobileView === "list" ? t("search.map") : t("search.list")}
         </button>
       </div>
 
@@ -200,7 +204,7 @@ export function SearchExperience({
             mobileView === "map" ? "hidden lg:block" : ""
           }`}
         >
-          {items.length === 0 && <PropertyGridEmptyState message={emptyMessage} />}
+          {items.length === 0 && <PropertyGridEmptyState message={resolvedEmptyMessage} />}
           <ul className="space-y-8">
             {items.map((property, index) => (
               <li
@@ -211,6 +215,8 @@ export function SearchExperience({
               >
                 <PropertyCard
                   property={property}
+                  t={t}
+                  locale={locale}
                   priority={index < 2}
                   sizes="(min-width: 1024px) 45vw, 100vw"
                 />
@@ -226,7 +232,7 @@ export function SearchExperience({
                 disabled={loadingMore}
                 className="rounded-sm border border-border-strong px-6 py-2.5 text-sm font-medium text-ink hover:bg-canvas-alt disabled:opacity-40"
               >
-                {loadingMore ? "Loading…" : "Show more"}
+                {loadingMore ? t("search.loadingMore") : t("search.showMoreResults")}
               </button>
             </div>
           )}

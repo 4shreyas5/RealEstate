@@ -5,6 +5,7 @@ import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { searchProperties } from "@/lib/properties";
 import { PropertyGrid } from "@/components/property/property-grid";
+import { getT } from "@/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +43,14 @@ export async function generateMetadata({
   return {
     title,
     description: `Curated ${resolved.kind === "locality" ? "properties in" : name.toLowerCase() + " in"} ${resolved.city.name}.`,
-    alternates: { canonical: `/${resolved.city.slug}/${slug}` },
+    alternates: {
+      canonical: `/${resolved.city.slug}/${slug}`,
+      languages: {
+        en: `/${resolved.city.slug}/${slug}?hl=en`,
+        hi: `/${resolved.city.slug}/${slug}?hl=hi`,
+        "x-default": `/${resolved.city.slug}/${slug}?hl=en`,
+      },
+    },
   };
 }
 
@@ -55,10 +63,12 @@ export default async function LocalityOrCategoryPage({
   const resolved = await resolvePage(citySlug, slug);
   if (!resolved) notFound();
 
-  const { properties, count } =
+  const [{ properties, count }, { t, locale }] = await Promise.all([
     resolved.kind === "locality"
-      ? await searchProperties({ cityId: resolved.city.id, localityId: resolved.locality.id })
-      : await searchProperties({ cityId: resolved.city.id, categoryId: resolved.category.id });
+      ? searchProperties({ cityId: resolved.city.id, localityId: resolved.locality.id })
+      : searchProperties({ cityId: resolved.city.id, categoryId: resolved.category.id }),
+    getT(),
+  ]);
 
   const name = resolved.kind === "locality" ? resolved.locality.name : resolved.category.name;
 
@@ -72,10 +82,10 @@ export default async function LocalityOrCategoryPage({
       <h1 className="font-display mt-1 text-3xl font-medium text-ink">
         {resolved.kind === "locality" ? name : `${name} in ${resolved.city.name}`}
       </h1>
-      <p className="mt-2 text-ink-secondary">{count} curated homes</p>
+      <p className="mt-2 text-ink-secondary">{t("property.curatedHomes", { count })}</p>
 
       <div className="mt-8">
-        <PropertyGrid properties={properties} priorityCount={3} />
+        <PropertyGrid properties={properties} priorityCount={3} t={t} locale={locale} />
       </div>
     </div>
   );

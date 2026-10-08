@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/i18n/locale-context";
 
 export interface FilterTaxonomy {
   categories: { id: string; name: string }[];
@@ -30,6 +31,7 @@ export function FilterSheet({
   lockedType?: "SALE" | "RENT";
   onApply: (params: URLSearchParams) => void;
 }) {
+  const { t } = useT();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [draft, setDraft] = useState(() => new URLSearchParams(searchParams.toString()));
   const [liveCount, setLiveCount] = useState<number | null>(null);
@@ -94,21 +96,21 @@ export function FilterSheet({
       className="w-full max-w-lg rounded-lg border border-border bg-surface p-0 backdrop:bg-ink/40 sm:rounded-lg [&:not([open])]:hidden"
     >
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
-        <h2 className="font-display text-lg font-medium text-ink">Filters</h2>
-        <button type="button" onClick={onClose} aria-label="Close filters" className="text-ink-secondary">
+        <h2 className="font-display text-lg font-medium text-ink">{t("search.filters")}</h2>
+        <button type="button" onClick={onClose} aria-label={t("search.closeFilters")} className="text-ink-secondary">
           ×
         </button>
       </div>
 
       <div className="max-h-[60vh] space-y-6 overflow-y-auto px-5 py-5">
-        <FilterGroup title="Location">
+        <FilterGroup title={t("search.location")}>
           <select
-            aria-label="City"
+            aria-label={t("search.cityLabel")}
             value={draft.get("city") ?? ""}
             onChange={(e) => set("city", e.target.value)}
             className="w-full rounded-sm border border-border px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/30"
           >
-            <option value="">Any city</option>
+            <option value="">{t("search.anyCity")}</option>
             {taxonomy.cities.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -117,13 +119,13 @@ export function FilterSheet({
           </select>
           {draft.get("city") && (
             <select
-              aria-label="Locality"
+              aria-label={t("search.localityLabel")}
               value={draft.get("locality") ?? ""}
               onChange={(e) => set("locality", e.target.value)}
               disabled={localitiesLoading}
               className="mt-3 w-full rounded-sm border border-border px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:opacity-60"
             >
-              <option value="">{localitiesLoading ? "Loading localities…" : "Any locality"}</option>
+              <option value="">{localitiesLoading ? t("search.loadingLocalities") : t("search.anyLocality")}</option>
               {localities.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.name}
@@ -133,14 +135,14 @@ export function FilterSheet({
           )}
         </FilterGroup>
 
-        <FilterGroup title="Type & category">
+        <FilterGroup title={t("search.typeCategory")}>
           <select
-            aria-label="Category"
+            aria-label={t("search.categoryLabel")}
             value={draft.get("category") ?? ""}
             onChange={(e) => set("category", e.target.value)}
             className="w-full rounded-sm border border-border px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/30"
           >
-            <option value="">Any category</option>
+            <option value="">{t("search.anyCategory")}</option>
             {taxonomy.categories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -149,16 +151,16 @@ export function FilterSheet({
           </select>
         </FilterGroup>
 
-        <FilterGroup title="Price">
+        <FilterGroup title={t("search.price")}>
           <div className="flex items-center gap-2">
             <label className="sr-only" htmlFor="filter-min-price">
-              Minimum price
+              {t("search.minimumPrice")}
             </label>
             <input
               id="filter-min-price"
               type="number"
               inputMode="numeric"
-              placeholder="Min"
+              placeholder={t("search.minPrice")}
               value={draft.get("minPrice") ?? ""}
               onChange={(e) => set("minPrice", e.target.value)}
               className="w-full rounded-sm border border-border px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/30"
@@ -167,13 +169,13 @@ export function FilterSheet({
               –
             </span>
             <label className="sr-only" htmlFor="filter-max-price">
-              Maximum price
+              {t("search.maximumPrice")}
             </label>
             <input
               id="filter-max-price"
               type="number"
               inputMode="numeric"
-              placeholder="Max"
+              placeholder={t("search.maxPrice")}
               value={draft.get("maxPrice") ?? ""}
               onChange={(e) => set("maxPrice", e.target.value)}
               className="w-full rounded-sm border border-border px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/30"
@@ -181,46 +183,46 @@ export function FilterSheet({
           </div>
         </FilterGroup>
 
-        <FilterGroup title="Size & layout">
+        <FilterGroup title={t("search.sizeLayout")}>
           <div className="grid grid-cols-2 gap-3">
             <select
-              aria-label="Minimum bedrooms"
+              aria-label={t("search.minimumBedrooms")}
               value={draft.get("bedrooms") ?? ""}
               onChange={(e) => set("bedrooms", e.target.value)}
               className="rounded-sm border border-border px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/30"
             >
-              <option value="">Any beds</option>
+              <option value="">{t("search.anyBeds")}</option>
               {[1, 2, 3, 4, 5].map((n) => (
                 <option key={n} value={n}>
-                  {n}+ bd
+                  {t("search.bedsPlus", { count: n })}
                 </option>
               ))}
             </select>
             <select
-              aria-label="Furnishing"
+              aria-label={t("search.furnishing")}
               value={draft.get("furnishing") ?? ""}
               onChange={(e) => set("furnishing", e.target.value)}
               className="rounded-sm border border-border px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/30"
             >
-              <option value="">Any furnishing</option>
-              <option value="UNFURNISHED">Unfurnished</option>
-              <option value="SEMI_FURNISHED">Semi-furnished</option>
-              <option value="FULLY_FURNISHED">Fully furnished</option>
+              <option value="">{t("search.anyFurnishing")}</option>
+              <option value="UNFURNISHED">{t("search.unfurnished")}</option>
+              <option value="SEMI_FURNISHED">{t("search.semiFurnished")}</option>
+              <option value="FULLY_FURNISHED">{t("search.fullyFurnished")}</option>
             </select>
           </div>
           <select
-            aria-label="Construction status"
+            aria-label={t("search.constructionStatus")}
             value={draft.get("construction") ?? ""}
             onChange={(e) => set("construction", e.target.value)}
             className="mt-3 w-full rounded-sm border border-border px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/30"
           >
-            <option value="">Any construction status</option>
-            <option value="READY_TO_MOVE">Ready to move</option>
-            <option value="UNDER_CONSTRUCTION">Under construction</option>
+            <option value="">{t("search.anyConstructionStatus")}</option>
+            <option value="READY_TO_MOVE">{t("search.readyToMove")}</option>
+            <option value="UNDER_CONSTRUCTION">{t("search.underConstruction")}</option>
           </select>
         </FilterGroup>
 
-        <FilterGroup title="Amenities">
+        <FilterGroup title={t("search.amenities")}>
           <div className="grid grid-cols-2 gap-2">
             {taxonomy.amenities.map((amenity) => {
               const checked = amenitiesValue.includes(amenity.id);
@@ -250,14 +252,14 @@ export function FilterSheet({
           onClick={() => setDraft(new URLSearchParams())}
           className="text-sm font-medium text-ink-secondary"
         >
-          Clear all
+          {t("search.clearAll")}
         </button>
         <button
           type="button"
           onClick={() => onApply(draft)}
           className="rounded-sm bg-accent px-5 py-2.5 text-sm font-medium text-canvas hover:bg-accent-hover"
         >
-          Show {liveCount ?? "…"} homes
+          {liveCount === null ? t("search.showNHomes", { count: "…" }) : t("search.showNHomes", { count: liveCount })}
         </button>
       </div>
     </dialog>

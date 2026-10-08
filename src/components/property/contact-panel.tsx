@@ -1,7 +1,8 @@
 import { formatPrice } from "@/lib/format";
 import { WhatsAppCTA, CallCTA, EnquiryCTA, type ContactContext } from "@/components/shared/contact-actions";
+import { getT } from "@/i18n/server";
 
-export function ContactPanel({
+export async function ContactPanel({
   priceAmount,
   priceCurrency,
   context,
@@ -10,11 +11,12 @@ export function ContactPanel({
   priceCurrency: string;
   context: ContactContext;
 }) {
+  const { t } = await getT();
   return (
     <>
       {/* Desktop sticky right rail */}
       <div className="hidden lg:sticky lg:top-20 lg:block lg:rounded-md lg:border lg:border-border lg:bg-surface lg:p-5">
-        <p className="text-sm text-ink-secondary">Interested in this home?</p>
+        <p className="text-sm text-ink-secondary">{t("propertyDetail.interestedInHome")}</p>
         <p className="mt-1 font-sans text-xl font-semibold tabular-nums text-ink">
           {formatPrice(priceAmount, priceCurrency)}
         </p>
