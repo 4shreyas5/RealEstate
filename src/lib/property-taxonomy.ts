@@ -19,15 +19,17 @@ export async function getWizardTaxonomy() {
   };
 }
 
-/** For editing an existing property: the state plus the option lists along its saved city → locality chain. */
-export async function getWizardLocationChain(cityId: string, localityId: string) {
+/** For editing an existing property: the state plus the option lists along its saved city → locality chain. Locality may be absent entirely. */
+export async function getWizardLocationChain(cityId: string, localityId: string | null) {
   const city = await prisma.city.findUnique({ where: { id: cityId }, select: { stateId: true } });
   const [cities, localities, neighbourhoods] = await Promise.all([
     city
       ? prisma.city.findMany({ where: { stateId: city.stateId }, select: { id: true, name: true }, orderBy: { name: "asc" } })
       : Promise.resolve([]),
     prisma.locality.findMany({ where: { cityId }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
-    prisma.neighbourhood.findMany({ where: { localityId }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    localityId
+      ? prisma.neighbourhood.findMany({ where: { localityId }, select: { id: true, name: true }, orderBy: { name: "asc" } })
+      : Promise.resolve([]),
   ]);
   return { stateId: city?.stateId ?? "", cities, localities, neighbourhoods };
 }

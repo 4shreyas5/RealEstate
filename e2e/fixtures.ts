@@ -6,6 +6,21 @@ export const HAS_ADMIN = !!(ADMIN_EMAIL && ADMIN_PASSWORD);
 export const ALLOW_WRITES = process.env.E2E_ALLOW_WRITES === "1";
 export const QA_TITLE_PREFIX = "QA TEST PROPERTY — DO NOT PUBLISH";
 
+/** Title prefix for the one PUBLISHED property global-setup.ts creates so
+ * read-only specs (public listings, search, Hindi detail/enquiry) have
+ * something real to find — independent of whatever real listings currently
+ * exist. global-teardown.ts removes every row with this prefix. */
+export const QA_PUBLISHED_FIXTURE_TITLE = "QA E2E FIXTURE — PUBLISHED TEST LISTING";
+
+/** Title prefix for the published-with-zero-photographs fixture global-setup.ts
+ * also creates (under the same QA_PUBLISHED_FIXTURE_TITLE prefix, so
+ * global-teardown.ts removes it too) — used to verify public pages render
+ * correctly for a property with no images at all. */
+export const QA_PUBLISHED_NO_PHOTOS_TITLE = `${QA_PUBLISHED_FIXTURE_TITLE} NO PHOTOS`;
+/** Fixed, predictable slug for that same fixture, so public.spec.ts can
+ * navigate straight to it without a full-text search feature. */
+export const QA_PUBLISHED_NO_PHOTOS_SLUG = "qa-e2e-fixture-published-no-photos";
+
 /**
  * Every test gets a watcher that FAILS it on: uncaught JS exceptions, console
  * errors (incl. hydration), HTTP >= 400 responses, failed requests, failed

@@ -67,21 +67,23 @@ export async function getPrimaryCity(listed: ListedCity[]) {
 /** Localities that have published listings, busiest first — falls back to alphabetical if none do yet. */
 export const getExploreLocations = unstable_cache(
   async (limit = 6) => {
+    // Properties without a locality (now optional) have nothing to group into here.
     const groups = await prisma.property.groupBy({
       by: ["localityId"],
-      where: { status: "PUBLISHED" },
+      where: { status: "PUBLISHED", localityId: { not: null } },
       _count: { _all: true },
       orderBy: { _count: { localityId: "desc" } },
       take: limit,
     });
 
+    const localityIds = groups.map((g) => g.localityId).filter((id): id is string => id !== null);
     const include = { city: { select: { name: true, slug: true } } };
-    let localities = groups.length
-      ? await prisma.locality.findMany({ where: { id: { in: groups.map((g) => g.localityId) } }, include })
+    let localities = localityIds.length
+      ? await prisma.locality.findMany({ where: { id: { in: localityIds } }, include })
       : await prisma.locality.findMany({ take: limit, orderBy: { name: "asc" }, include });
 
-    if (groups.length) {
-      const order = new Map(groups.map((g, i) => [g.localityId, i]));
+    if (localityIds.length) {
+      const order = new Map(localityIds.map((id, i) => [id, i]));
       localities = localities.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
     }
 

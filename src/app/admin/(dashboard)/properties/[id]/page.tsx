@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getWizardLocationChain, getWizardTaxonomy } from "@/lib/property-taxonomy";
-import { PropertyWizard } from "@/components/admin/property-wizard";
+import { PropertyForm } from "@/components/admin/property-form";
 import type { PropertyFormValues } from "@/lib/validations/property";
 
 export default async function EditPropertyPage({
@@ -28,8 +28,9 @@ export default async function EditPropertyPage({
     listingType: property.listingType,
     categoryId: property.categoryId,
     cityId: property.cityId,
-    localityId: property.localityId,
+    localityId: property.localityId ?? undefined,
     neighbourhoodId: property.neighbourhoodId ?? undefined,
+    address: property.address ?? undefined,
     latitude: property.latitude ?? undefined,
     longitude: property.longitude ?? undefined,
     priceAmount: Number(property.priceAmount),
@@ -58,7 +59,7 @@ export default async function EditPropertyPage({
     <div>
       <h1 className="font-display text-2xl font-medium text-ink">Edit property</h1>
       <div className="mt-6">
-        <PropertyWizard
+        <PropertyForm
           propertyId={property.id}
           initialValues={initialValues}
           images={property.images}

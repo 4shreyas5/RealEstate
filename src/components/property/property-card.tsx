@@ -86,7 +86,7 @@ export function PropertyCard({
         </p>
         <p className="text-base font-medium text-ink">{property.title}</p>
         <p className="text-sm text-ink-secondary">
-          {property.localityName}, {property.cityName}
+          {property.localityName ? `${property.localityName}, ${property.cityName}` : property.cityName}
         </p>
         <p className="pt-1 text-sm text-ink-secondary">{specs.join(" · ")}</p>
       </div>

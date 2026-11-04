@@ -17,7 +17,7 @@ export interface PropertyCardData {
   bedrooms: number | null;
   bathrooms: number | null;
   cityName: string;
-  localityName: string;
+  localityName: string | null;
   status: string;
   coverImage: { url: string; altText: string } | null;
 }
@@ -60,7 +60,7 @@ function toCardData(property: RawCardProperty): PropertyCardData {
     bedrooms: property.bedrooms,
     bathrooms: property.bathrooms,
     cityName: property.city.name,
-    localityName: property.locality.name,
+    localityName: property.locality?.name ?? null,
     status: property.status,
     coverImage: property.images[0] && isRenderableImageUrl(property.images[0].url) ? property.images[0] : null,
   };
@@ -86,13 +86,20 @@ export async function getRecentProperties(limit = 8, excludeIds: string[] = []) 
   return properties.map(toCardData);
 }
 
+/** Scoped to the same locality when the property has one; otherwise falls
+ * back to the same city, so a property without a locality still gets
+ * sensible "similar properties" instead of none at all. */
 export async function getSimilarProperties(
   propertyId: string,
-  localityId: string,
+  scope: { cityId: string; localityId: string | null },
   limit = 6,
 ): Promise<PropertyCardData[]> {
   const properties = await prisma.property.findMany({
-    where: { status: "PUBLISHED", localityId, id: { not: propertyId } },
+    where: {
+      status: "PUBLISHED",
+      id: { not: propertyId },
+      ...(scope.localityId ? { localityId: scope.localityId } : { cityId: scope.cityId }),
+    },
     select: cardSelect,
     orderBy: { publishedAt: "desc" },
     take: limit,

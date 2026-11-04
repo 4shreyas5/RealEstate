@@ -170,12 +170,13 @@ model Property {
   // Location
   city            City           @relation(fields: [cityId], references: [id], onDelete: Restrict)
   cityId          String
-  locality        Locality       @relation(fields: [localityId], references: [id], onDelete: Restrict)
-  localityId      String
+  locality        Locality?      @relation(fields: [localityId], references: [id], onDelete: SetNull)
+  localityId      String?
   neighbourhood   Neighbourhood? @relation(fields: [neighbourhoodId], references: [id], onDelete: SetNull)
   neighbourhoodId String?
   latitude        Float?
   longitude       Float?
+  address         String? @db.Text // free-text full address — optional, independent of lat/long
 
   // Pricing — generic currency, never hardcoded
   priceAmount   Decimal     @db.Decimal(14, 2)

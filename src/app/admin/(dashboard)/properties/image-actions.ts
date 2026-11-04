@@ -37,14 +37,20 @@ export async function addPropertyImage(propertyId: string, url: string) {
   return image;
 }
 
-export async function updateImageAltText(imageId: string, altText: string) {
+/** Every mutation below is scoped with `propertyId` in its `where`, not just
+ * `id` — a stale or tampered imageId from a different property then simply
+ * matches zero rows instead of silently mutating someone else's image. */
+
+export async function updateImageAltText(propertyId: string, imageId: string, altText: string) {
   await requireAdminUser();
-  await prisma.propertyImage.update({ where: { id: imageId }, data: { altText } });
+  await prisma.propertyImage.updateMany({ where: { id: imageId, propertyId }, data: { altText } });
+  revalidatePath(`/admin/properties/${propertyId}`);
 }
 
-export async function updateImageRoomLabel(imageId: string, roomLabel: string) {
+export async function updateImageRoomLabel(propertyId: string, imageId: string, roomLabel: string) {
   await requireAdminUser();
-  await prisma.propertyImage.update({ where: { id: imageId }, data: { roomLabel } });
+  await prisma.propertyImage.updateMany({ where: { id: imageId, propertyId }, data: { roomLabel } });
+  revalidatePath(`/admin/properties/${propertyId}`);
 }
 
 export async function setCoverImage(propertyId: string, imageId: string) {
@@ -54,7 +60,7 @@ export async function setCoverImage(propertyId: string, imageId: string) {
       where: { propertyId },
       data: { isCover: false },
     }),
-    prisma.propertyImage.update({ where: { id: imageId }, data: { isCover: true } }),
+    prisma.propertyImage.updateMany({ where: { id: imageId, propertyId }, data: { isCover: true } }),
   ]);
   revalidatePath(`/admin/properties/${propertyId}`);
 }
@@ -86,11 +92,34 @@ export async function moveImage(propertyId: string, imageId: string, direction: 
 export async function removePropertyImage(propertyId: string, imageId: string) {
   await requireAdminUser();
 
-  const removed = await prisma.propertyImage.delete({ where: { id: imageId } });
+  const [target, property] = await Promise.all([
+    prisma.propertyImage.findFirst({ where: { id: imageId, propertyId } }),
+    prisma.property.findUnique({ where: { id: propertyId }, select: { status: true } }),
+  ]);
+  if (!target || !property) {
+    return { ok: false as const, errors: ["That photo no longer exists."] };
+  }
+
+  // A published listing must always keep at least one photo — removing the
+  // last one would leave it visibly broken instead of just un-publishable.
+  if (property.status === "PUBLISHED") {
+    const remaining = await prisma.propertyImage.count({ where: { propertyId } });
+    if (remaining <= 1) {
+      return {
+        ok: false as const,
+        errors: ["Can't remove the only photo of a published property — add a replacement first, or unpublish it."],
+      };
+    }
+  }
+
+  const { count } = await prisma.propertyImage.deleteMany({ where: { id: imageId, propertyId } });
+  if (count === 0) {
+    return { ok: false as const, errors: ["That photo no longer exists."] };
+  }
 
   // Best-effort: drop the Storage object too so removed photos don't pile up
   // as orphans. Placeholder (non-Storage) URLs have nothing to delete.
-  const objectPath = propertyImagePathFromUrl(removed.url);
+  const objectPath = propertyImagePathFromUrl(target.url);
   if (objectPath) {
     const supabase = await createClient();
     const { data, error } = await supabase.storage.from(PROPERTY_IMAGE_BUCKET).remove([objectPath]);
@@ -99,7 +128,7 @@ export async function removePropertyImage(propertyId: string, imageId: string) {
     }
   }
 
-  if (removed.isCover) {
+  if (target.isCover) {
     const next = await prisma.propertyImage.findFirst({
       where: { propertyId },
       orderBy: { position: "asc" },
@@ -110,4 +139,5 @@ export async function removePropertyImage(propertyId: string, imageId: string) {
   }
 
   revalidatePath(`/admin/properties/${propertyId}`);
+  return { ok: true as const };
 }

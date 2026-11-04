@@ -10,6 +10,11 @@ import { defineConfig } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./e2e",
+  // Seeds/removes exactly one clearly-labelled PUBLISHED QA property so
+  // read-only specs that need real public listings don't depend on the
+  // current state of real data — see e2e/global-setup.ts.
+  globalSetup: "./e2e/global-setup.ts",
+  globalTeardown: "./e2e/global-teardown.ts",
   timeout: 90_000,
   expect: { timeout: 20_000 },
   workers: 1,
@@ -22,5 +27,14 @@ export default defineConfig({
   },
   webServer: process.env.BASE_URL
     ? undefined
-    : { command: "npm run start", url: "http://localhost:3000", reuseExistingServer: true, timeout: 120_000 },
+    : {
+        command: "npm run start",
+        // A static route, deliberately not one that populates the
+        // "locations" data cache — global-setup.ts seeds a published
+        // property right after this readiness check, and a cached empty
+        // result from the health check would shadow it for several minutes.
+        url: "http://localhost:3000/robots.txt",
+        reuseExistingServer: true,
+        timeout: 120_000,
+      },
 });

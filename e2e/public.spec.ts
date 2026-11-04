@@ -1,4 +1,4 @@
-import { test, expect, gotoOk } from "./fixtures";
+import { test, expect, gotoOk, QA_PUBLISHED_NO_PHOTOS_SLUG } from "./fixtures";
 
 test.describe("public site", () => {
   test("homepage: slogan, Buy/Rent paths, city search", async ({ page }) => {
@@ -77,6 +77,20 @@ test.describe("public site", () => {
     await page.locator("dialog").getByRole("button", { name: /Show \d+ home/ }).click();
     await expect(page).toHaveURL(/city=.+locality=|locality=.+city=/);
     await expect(page.locator("h1").first()).not.toHaveText(/Something went wrong/i);
+  });
+
+  test("a published property with zero photographs renders cleanly, no broken images", async ({ page }) => {
+    // Photos are optional for publishing — this fixture (global-setup.ts) has
+    // none at all. The gallery and card must show a placeholder, not a crash
+    // or a broken <img>; the `watch` fixture already fails the test on any
+    // broken image or console error.
+    await gotoOk(page, `/properties/${QA_PUBLISHED_NO_PHOTOS_SLUG}`);
+    await expect(page.getByText("No photo yet").first()).toBeVisible();
+
+    await gotoOk(page, "/search");
+    const card = page.locator(`a[href="/properties/${QA_PUBLISHED_NO_PHOTOS_SLUG}"]`).first();
+    await expect(card).toBeVisible();
+    await expect(card.getByText("No photo yet")).toBeVisible();
   });
 
   test("location API rejects bad input and serves valid lookups", async ({ request }) => {

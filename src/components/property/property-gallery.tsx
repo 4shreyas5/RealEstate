@@ -19,7 +19,13 @@ export function PropertyGallery({ images }: { images: GalleryImage[] }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const active = images[activeIndex];
 
-  if (images.length === 0) return null;
+  if (images.length === 0) {
+    return (
+      <div className="flex aspect-4/3 w-full items-center justify-center rounded-lg bg-canvas-alt text-sm text-ink-tertiary sm:aspect-16/9">
+        {t("property.noPhotoYet")}
+      </div>
+    );
+  }
 
   return (
     <div>

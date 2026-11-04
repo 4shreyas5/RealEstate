@@ -41,6 +41,7 @@ export function ImageManager({
   const [rows, setRows] = useState(images);
   const [uploading, setUploading] = useState(false);
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
+  const [removeError, setRemoveError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -128,6 +129,12 @@ export function ImageManager({
         </ul>
       )}
 
+      {removeError && (
+        <p role="alert" className="mt-3 rounded-sm border border-error/30 bg-error/5 p-3 text-sm text-error">
+          {removeError}
+        </p>
+      )}
+
       <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {rows
           .slice()
@@ -161,14 +168,14 @@ export function ImageManager({
                 type="text"
                 placeholder="Room (e.g. Living room)"
                 defaultValue={image.roomLabel ?? ""}
-                onBlur={(e) => updateImageRoomLabel(image.id, e.target.value)}
+                onBlur={(e) => updateImageRoomLabel(propertyId, image.id, e.target.value)}
                 className="mt-2 w-full rounded-xs border border-border px-2 py-1 text-xs outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
               />
               <input
                 type="text"
                 placeholder="Alt text (required)"
                 defaultValue={image.altText}
-                onBlur={(e) => updateImageAltText(image.id, e.target.value)}
+                onBlur={(e) => updateImageAltText(propertyId, image.id, e.target.value)}
                 className="mt-1 w-full rounded-xs border border-border px-2 py-1 text-xs outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
               />
 
@@ -204,8 +211,13 @@ export function ImageManager({
                   type="button"
                   onClick={() =>
                     startTransition(async () => {
-                      await removePropertyImage(propertyId, image.id);
-                      setRows((prev) => prev.filter((r) => r.id !== image.id));
+                      const result = await removePropertyImage(propertyId, image.id);
+                      if (result.ok) {
+                        setRows((prev) => prev.filter((r) => r.id !== image.id));
+                        setRemoveError(null);
+                      } else {
+                        setRemoveError(result.errors[0]);
+                      }
                     })
                   }
                   className="text-error"

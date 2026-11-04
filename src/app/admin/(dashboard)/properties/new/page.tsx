@@ -1,5 +1,5 @@
 import { getWizardTaxonomy } from "@/lib/property-taxonomy";
-import { PropertyWizard } from "@/components/admin/property-wizard";
+import { PropertyForm } from "@/components/admin/property-form";
 
 export default async function NewPropertyPage() {
   const taxonomy = await getWizardTaxonomy();
@@ -8,7 +8,7 @@ export default async function NewPropertyPage() {
     <div>
       <h1 className="font-display text-2xl font-medium text-ink">Add property</h1>
       <div className="mt-6">
-        <PropertyWizard propertyId={null} initialValues={{}} images={[]} taxonomy={taxonomy} />
+        <PropertyForm propertyId={null} initialValues={{}} images={[]} taxonomy={taxonomy} />
       </div>
     </div>
   );

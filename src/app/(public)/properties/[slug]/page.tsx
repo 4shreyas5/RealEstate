@@ -25,10 +25,11 @@ export async function generateMetadata({
   const property = await getPropertyBySlug(slug);
   if (!property) return {};
 
-  const title = property.metaTitle || `${property.title} in ${property.locality.name}, ${property.city.name}`;
+  const locationLabel = property.locality ? `${property.locality.name}, ${property.city.name}` : property.city.name;
+  const title = property.metaTitle || `${property.title} in ${locationLabel}`;
   const description =
     property.metaDescription ||
-    `${formatPrice(Number(property.priceAmount), property.priceCurrency)} · ${formatArea(Number(property.areaValue), property.areaUnit)} · ${property.locality.name}, ${property.city.name}`;
+    `${formatPrice(Number(property.priceAmount), property.priceCurrency)} · ${formatArea(Number(property.areaValue), property.areaUnit)} · ${locationLabel}`;
   const noindex = property.status === "DRAFT" || CLOSED_STATUSES.has(property.status);
 
   return {
@@ -63,7 +64,7 @@ export default async function PropertyDetailPage({
   if (!property || property.status === "DRAFT") notFound();
 
   const [similar, { t, locale }] = await Promise.all([
-    getSimilarProperties(property.id, property.localityId, 6),
+    getSimilarProperties(property.id, { cityId: property.cityId, localityId: property.localityId }, 6),
     getT(),
   ]);
   const isClosed = CLOSED_STATUSES.has(property.status);
@@ -71,9 +72,9 @@ export default async function PropertyDetailPage({
   const context = {
     propertyId: property.id,
     cityId: property.cityId,
-    localityId: property.localityId,
+    localityId: property.localityId ?? undefined,
     title: property.title,
-    locality: property.locality.name,
+    locality: property.locality?.name,
     url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/properties/${property.slug}`,
     source: "detail_sticky_bar",
   };
@@ -85,7 +86,7 @@ export default async function PropertyDetailPage({
     description: property.description,
     address: {
       "@type": "PostalAddress",
-      addressLocality: property.locality.name,
+      ...(property.locality ? { addressLocality: property.locality.name } : {}),
       addressRegion: property.city.name,
     },
     image: property.images.map((img) => img.url),
@@ -129,8 +130,7 @@ export default async function PropertyDetailPage({
               </span>
             </p>
             <p className="mt-1 text-ink-secondary">
-              {property.locality.name}
-              {property.neighbourhood ? `, ${property.neighbourhood.name}` : ""}, {property.city.name}
+              {[property.locality?.name, property.neighbourhood?.name, property.city.name].filter(Boolean).join(", ")}
             </p>
 
             <div className="mt-6">

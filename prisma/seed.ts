@@ -63,7 +63,8 @@ async function main() {
     { name: "Apartments", areaUnit: "SQFT" as AreaUnit },
     { name: "Villas", areaUnit: "SQFT" as AreaUnit },
     { name: "Independent Houses", areaUnit: "SQFT" as AreaUnit },
-    { name: "Plots", areaUnit: "SQFT" as AreaUnit },
+    { name: "Residential Plot", areaUnit: "SQFT" as AreaUnit },
+    { name: "Agricultural Land", areaUnit: "ACRE" as AreaUnit },
   ];
   const categories = await Promise.all(
     categoryDefs.map((def) =>
